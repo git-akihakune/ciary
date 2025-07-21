@@ -1,2 +1,2 @@
 # ciary
-Simple diary written in C
+Minimalistic TUI diary written in C. Features a calendar view (can be changed to view by week/month/year); and a text editor for each entry that supports Markdown. Supports automatic time logging upon entry creation. All journal entries are stored as plain text in Markdown on the local machine.
