@@ -1,0 +1,232 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [x86_64, aarch64]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libncurses-dev gcc-multilib
+
+      - name: Install cross-compilation toolchain for aarch64
+        if: matrix.arch == 'aarch64'
+        run: |
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Build for Linux ${{ matrix.arch }}
+        run: |
+          if [ "${{ matrix.arch }}" = "x86_64" ]; then
+            make release
+            mkdir -p build/dist
+            cp ciary build/dist/ciary-linux-x86_64
+          else
+            make linux-aarch64
+          fi
+
+      - name: Create archive
+        run: |
+          mkdir -p release
+          cd build/dist
+          binary_name="ciary-linux-${{ matrix.arch }}"
+          archive_name="ciary-${GITHUB_REF#refs/tags/}-linux-${{ matrix.arch }}"
+          
+          mkdir -p "$archive_name"
+          cp "$binary_name" "$archive_name/ciary"
+          cp ../../README.md "$archive_name/" 2>/dev/null || true
+          cp ../../LICENSE "$archive_name/" 2>/dev/null || true
+          
+          # Create install instructions
+          cat > "$archive_name/INSTALL.txt" << EOF
+          Ciary Installation Instructions
+          ==============================
+          
+          1. Make executable: chmod +x ciary
+          2. Install dependencies: sudo apt install libncurses-dev  
+          3. Move to PATH: sudo mv ciary /usr/local/bin/
+          4. Run: ciary
+          EOF
+          
+          tar -czf "../../release/${archive_name}.tar.gz" "$archive_name"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ciary-linux-${{ matrix.arch }}
+          path: release/*.tar.gz
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          brew install ncurses
+
+      - name: Build universal binary
+        run: |
+          # Build for both architectures
+          clang -arch x86_64 -Wall -Wextra -std=c99 -Iinclude -O2 -DNDEBUG src/*.c -o build-x86_64 -lncurses
+          clang -arch arm64 -Wall -Wextra -std=c99 -Iinclude -O2 -DNDEBUG src/*.c -o build-arm64 -lncurses
+          
+          # Create universal binary
+          mkdir -p build/dist
+          lipo -create build-x86_64 build-arm64 -output build/dist/ciary-darwin-universal
+
+      - name: Create archive
+        run: |
+          mkdir -p release
+          cd build/dist
+          binary_name="ciary-darwin-universal"
+          archive_name="ciary-${GITHUB_REF#refs/tags/}-darwin-universal"
+          
+          mkdir -p "$archive_name"
+          cp "$binary_name" "$archive_name/ciary"
+          cp ../../README.md "$archive_name/" 2>/dev/null || true
+          cp ../../LICENSE "$archive_name/" 2>/dev/null || true
+          
+          # Create install instructions
+          cat > "$archive_name/INSTALL.txt" << EOF
+          Ciary Installation Instructions
+          ==============================
+          
+          1. Make executable: chmod +x ciary
+          2. Install dependencies: brew install ncurses
+          3. Move to PATH: sudo mv ciary /usr/local/bin/
+          4. Run: ciary
+          EOF
+          
+          tar -czf "../../release/${archive_name}.tar.gz" "$archive_name"
+          zip -r "../../release/${archive_name}.zip" "$archive_name"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ciary-darwin-universal
+          path: release/*
+
+  build-freebsd:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build in FreeBSD VM
+        uses: vmactions/freebsd-vm@v1
+        with:
+          usesh: true
+          mem: 2048
+          prepare: |
+            pkg install -y ncurses gmake gcc
+          run: |
+            gmake release
+            mkdir -p build/dist
+            cp ciary build/dist/ciary-freebsd-x86_64
+
+      - name: Create archive
+        run: |
+          mkdir -p release
+          cd build/dist
+          binary_name="ciary-freebsd-x86_64"
+          archive_name="ciary-${GITHUB_REF#refs/tags/}-freebsd-x86_64"
+          
+          mkdir -p "$archive_name"
+          cp "$binary_name" "$archive_name/ciary"
+          cp ../../README.md "$archive_name/" 2>/dev/null || true
+          cp ../../LICENSE "$archive_name/" 2>/dev/null || true
+          
+          # Create install instructions
+          cat > "$archive_name/INSTALL.txt" << EOF
+          Ciary Installation Instructions
+          ==============================
+          
+          1. Make executable: chmod +x ciary
+          2. Install dependencies: pkg install ncurses
+          3. Move to PATH: sudo mv ciary /usr/local/bin/
+          4. Run: ciary
+          EOF
+          
+          tar -czf "../../release/${archive_name}.tar.gz" "$archive_name"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ciary-freebsd-x86_64
+          path: release/*.tar.gz
+
+  create-release:
+    needs: [build-linux, build-macos, build-freebsd]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release-assets
+          find artifacts -name "*.tar.gz" -o -name "*.zip" | xargs -I {} cp {} release-assets/
+          ls -la release-assets/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release-assets/*
+          name: Release ${{ github.ref_name }}
+          body: |
+            # Ciary ${{ github.ref_name }}
+            
+            ## Download Instructions
+            
+            Choose the appropriate binary for your platform:
+            
+            - **Linux x86_64**: `ciary-${{ github.ref_name }}-linux-x86_64.tar.gz`
+            - **Linux ARM64**: `ciary-${{ github.ref_name }}-linux-aarch64.tar.gz`  
+            - **macOS Universal**: `ciary-${{ github.ref_name }}-darwin-universal.tar.gz` or `.zip`
+            - **FreeBSD x86_64**: `ciary-${{ github.ref_name }}-freebsd-x86_64.tar.gz`
+            
+            ## Installation
+            
+            1. Download and extract the appropriate archive
+            2. Make the binary executable: `chmod +x ciary`
+            3. Install dependencies (see README.md)
+            4. Optionally move to your PATH: `sudo mv ciary /usr/local/bin/`
+            
+            ## What's New
+            
+            See [CHANGELOG.md](CHANGELOG.md) for detailed changes.
+            
+            ## Dependencies
+            
+            - **Ubuntu/Debian**: `sudo apt install libncurses-dev`
+            - **macOS**: `brew install ncurses`
+            - **FreeBSD**: `pkg install ncurses`
+            - **Arch Linux**: `sudo pacman -S ncurses`
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') || contains(github.ref_name, 'rc') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
