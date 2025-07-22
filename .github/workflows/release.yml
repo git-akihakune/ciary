@@ -13,10 +13,10 @@ on:
 
 jobs:
   build-linux:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        arch: [x86_64, aarch64]
+        arch: [x86_64]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -26,37 +26,19 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libncurses-dev gcc-multilib
 
-      - name: Install cross-compilation toolchain for aarch64
-        if: matrix.arch == 'aarch64'
-        run: |
-          sudo apt-get install -y gcc-aarch64-linux-gnu
-          # Add ARM64 architecture and install cross-compilation ncurses
-          sudo dpkg --add-architecture arm64
-          sudo apt-get update
-          sudo apt-get install -y libncurses-dev:arm64 || echo "ARM64 ncurses not available, skipping static linking"
 
-      - name: Build for Linux ${{ matrix.arch }}
+      - name: Build for Linux x86_64
         run: |
-          if [ "${{ matrix.arch }}" = "x86_64" ]; then
-            make release
-            mkdir -p build/dist
-            cp ciary build/dist/ciary-linux-x86_64
-          else
-            # Try to build ARM64 version, fall back to native build if cross-compilation fails
-            make linux-aarch64 || {
-              echo "Cross-compilation failed, building native version as fallback"
-              make release
-              mkdir -p build/dist
-              cp ciary build/dist/ciary-linux-aarch64
-            }
-          fi
+          make release
+          mkdir -p build/dist
+          cp ciary build/dist/ciary-linux-x86_64
 
       - name: Create archive
         run: |
           mkdir -p release
           cd build/dist
-          binary_name="ciary-linux-${{ matrix.arch }}"
-          archive_name="ciary-${GITHUB_REF#refs/tags/}-linux-${{ matrix.arch }}"
+          binary_name="ciary-linux-x86_64"
+          archive_name="ciary-${GITHUB_REF#refs/tags/}-linux-x86_64"
           
           mkdir -p "$archive_name"
           cp "$binary_name" "$archive_name/ciary"
@@ -79,7 +61,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ciary-linux-${{ matrix.arch }}
+          name: ciary-linux-x86_64
           path: release/*.tar.gz
 
   build-macos:
@@ -215,7 +197,6 @@ jobs:
             Choose the appropriate binary for your platform:
             
             - **Linux x86_64**: `ciary-${{ github.ref_name }}-linux-x86_64.tar.gz`
-            - **Linux ARM64**: `ciary-${{ github.ref_name }}-linux-aarch64.tar.gz`  
             - **macOS Universal**: `ciary-${{ github.ref_name }}-darwin-universal.tar.gz` or `.zip`
             - **FreeBSD x86_64**: `ciary-${{ github.ref_name }}-freebsd-x86_64.tar.gz`
             

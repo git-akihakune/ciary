@@ -69,7 +69,7 @@ else
 endif
 
 .PHONY: all clean install uninstall debug release dist-all dist-clean
-.PHONY: linux-x86_64 linux-aarch64 darwin-universal freebsd-x86_64 freebsd-aarch64 openbsd-x86_64 netbsd-x86_64
+.PHONY: linux-x86_64 darwin-universal freebsd-x86_64 openbsd-x86_64 netbsd-x86_64
 .PHONY: test test-utils test-config test-file-io test-integration test-ui test-personalization test-clean test-all
 
 # Default target
@@ -149,12 +149,6 @@ linux-x86_64: TARGET = $(DISTDIR)/ciary-linux-x86_64
 linux-x86_64: CFLAGS += -O2 -DNDEBUG
 linux-x86_64: $(DISTDIR)/ciary-linux-x86_64
 
-# Linux aarch64
-linux-aarch64: CC = aarch64-linux-gnu-gcc
-linux-aarch64: LDFLAGS = -lncurses
-linux-aarch64: TARGET = $(DISTDIR)/ciary-linux-aarch64
-linux-aarch64: CFLAGS += -O2 -DNDEBUG
-linux-aarch64: $(DISTDIR)/ciary-linux-aarch64
 
 # macOS universal binary (x86_64 + arm64)
 darwin-universal: $(DISTDIR)/ciary-darwin-universal
@@ -176,12 +170,6 @@ freebsd-x86_64: TARGET = $(DISTDIR)/ciary-freebsd-x86_64
 freebsd-x86_64: CFLAGS += -O2 -DNDEBUG
 freebsd-x86_64: $(DISTDIR)/ciary-freebsd-x86_64
 
-# FreeBSD aarch64
-freebsd-aarch64: CC = aarch64-unknown-freebsd-gcc
-freebsd-aarch64: LDFLAGS = -lncurses
-freebsd-aarch64: TARGET = $(DISTDIR)/ciary-freebsd-aarch64
-freebsd-aarch64: CFLAGS += -O2 -DNDEBUG
-freebsd-aarch64: $(DISTDIR)/ciary-freebsd-aarch64
 
 # OpenBSD x86_64
 openbsd-x86_64: CC = x86_64-unknown-openbsd-gcc
@@ -206,7 +194,7 @@ $(DISTDIR):
 	mkdir -p $(DISTDIR)
 
 # Build all distribution targets
-dist-all: linux-x86_64 linux-aarch64 darwin-universal freebsd-x86_64 freebsd-aarch64 openbsd-x86_64 netbsd-x86_64
+dist-all: linux-x86_64 darwin-universal freebsd-x86_64 openbsd-x86_64 netbsd-x86_64
 
 # Native build with platform suffix
 native: release | $(DISTDIR)
@@ -251,10 +239,8 @@ help:
 	@echo ""
 	@echo "Cross-compilation:"
 	@echo "  linux-x86_64    - Build for Linux x86_64"
-	@echo "  linux-aarch64   - Build for Linux ARM64"
 	@echo "  darwin-universal - Build universal macOS binary"
 	@echo "  freebsd-x86_64  - Build for FreeBSD x86_64"
-	@echo "  freebsd-aarch64 - Build for FreeBSD ARM64"
 	@echo "  openbsd-x86_64  - Build for OpenBSD x86_64"
 	@echo "  netbsd-x86_64   - Build for NetBSD x86_64"
 	@echo ""
