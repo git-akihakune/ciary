@@ -151,7 +151,7 @@ linux-x86_64: $(DISTDIR)/ciary-linux-x86_64
 
 # Linux aarch64
 linux-aarch64: CC = aarch64-linux-gnu-gcc
-linux-aarch64: LDFLAGS = -lncurses -static
+linux-aarch64: LDFLAGS = -lncurses
 linux-aarch64: TARGET = $(DISTDIR)/ciary-linux-aarch64
 linux-aarch64: CFLAGS += -O2 -DNDEBUG
 linux-aarch64: $(DISTDIR)/ciary-linux-aarch64

@@ -214,13 +214,15 @@ int setup_first_run(config_t *config) {
                     char expanded_path[MAX_PATH_SIZE];
                     snprintf(expanded_path, sizeof(expanded_path), "%s%s", home, input + 1);
                     strncpy(config->journal_directory, expanded_path, MAX_PATH_SIZE - 1);
+                    config->journal_directory[MAX_PATH_SIZE - 1] = '\0';
                 } else {
                     strncpy(config->journal_directory, input, MAX_PATH_SIZE - 1);
+                    config->journal_directory[MAX_PATH_SIZE - 1] = '\0';
                 }
             } else {
                 strncpy(config->journal_directory, input, MAX_PATH_SIZE - 1);
+                config->journal_directory[MAX_PATH_SIZE - 1] = '\0';
             }
-            config->journal_directory[MAX_PATH_SIZE - 1] = '\0';
         }
     }
     

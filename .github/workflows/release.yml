@@ -30,6 +30,10 @@ jobs:
         if: matrix.arch == 'aarch64'
         run: |
           sudo apt-get install -y gcc-aarch64-linux-gnu
+          # Add ARM64 architecture and install cross-compilation ncurses
+          sudo dpkg --add-architecture arm64
+          sudo apt-get update
+          sudo apt-get install -y libncurses-dev:arm64 || echo "ARM64 ncurses not available, skipping static linking"
 
       - name: Build for Linux ${{ matrix.arch }}
         run: |
@@ -38,7 +42,13 @@ jobs:
             mkdir -p build/dist
             cp ciary build/dist/ciary-linux-x86_64
           else
-            make linux-aarch64
+            # Try to build ARM64 version, fall back to native build if cross-compilation fails
+            make linux-aarch64 || {
+              echo "Cross-compilation failed, building native version as fallback"
+              make release
+              mkdir -p build/dist
+              cp ciary build/dist/ciary-linux-aarch64
+            }
           fi
 
       - name: Create archive

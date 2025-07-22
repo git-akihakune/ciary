@@ -100,5 +100,8 @@ jobs:
         
         # Test cross-compilation if tools are available
         if command -v aarch64-linux-gnu-gcc >/dev/null 2>&1; then
-          make linux-aarch64 || echo "Cross-compilation failed, but continuing..."
+          echo "Testing ARM64 cross-compilation..."
+          make linux-aarch64 || echo "Cross-compilation failed (expected - ARM64 ncurses not available in CI)"
+        else
+          echo "ARM64 cross-compiler not available, skipping cross-compilation test"
         fi
