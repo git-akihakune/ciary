@@ -130,7 +130,12 @@ int show_export_dialog(app_state_t *state, export_options_t *options) {
     refresh();
     
     // Get date range choice
-    if (getnstr(input, sizeof(input) - 1) == ERR) return 0;
+    echo();  // Enable echo to show user input
+    if (getnstr(input, sizeof(input) - 1) == ERR) {
+        noecho();  // Restore noecho before returning
+        return 0;
+    }
+    noecho();  // Disable echo after input
     choice = atoi(input);
     
     date_range_preset_t preset;
@@ -147,7 +152,12 @@ int show_export_dialog(app_state_t *state, export_options_t *options) {
         // Get custom start date
         mvprintw(13, 4, "Start date (YYYY-MM-DD): ");
         refresh();
-        if (getnstr(input, sizeof(input) - 1) == ERR) return 0;
+        echo();  // Enable echo to show user input
+        if (getnstr(input, sizeof(input) - 1) == ERR) {
+            noecho();  // Restore noecho before returning
+            return 0;
+        }
+        noecho();  // Disable echo after input
         if (sscanf(input, "%d-%d-%d", &options->start_date.year, 
                    &options->start_date.month, &options->start_date.day) != 3) {
             return 0;
@@ -156,7 +166,12 @@ int show_export_dialog(app_state_t *state, export_options_t *options) {
         // Get custom end date
         mvprintw(14, 4, "End date (YYYY-MM-DD): ");
         refresh();
-        if (getnstr(input, sizeof(input) - 1) == ERR) return 0;
+        echo();  // Enable echo to show user input
+        if (getnstr(input, sizeof(input) - 1) == ERR) {
+            noecho();  // Restore noecho before returning
+            return 0;
+        }
+        noecho();  // Disable echo after input
         if (sscanf(input, "%d-%d-%d", &options->end_date.year, 
                    &options->end_date.month, &options->end_date.day) != 3) {
             return 0;
@@ -199,7 +214,12 @@ int show_export_dialog(app_state_t *state, export_options_t *options) {
     }
     refresh();
     
-    if (getnstr(input, sizeof(input) - 1) == ERR) return 0;
+    echo();  // Enable echo to show user input
+    if (getnstr(input, sizeof(input) - 1) == ERR) {
+        noecho();  // Restore noecho before returning
+        return 0;
+    }
+    noecho();  // Disable echo after input
     choice = atoi(input);
     
     switch (choice) {
@@ -227,9 +247,11 @@ int show_export_dialog(app_state_t *state, export_options_t *options) {
     mvprintw(25, 4, "Output directory [%s]: ", options->output_path);
     refresh();
     
+    echo();  // Enable echo to show user input
     if (getnstr(input, sizeof(input) - 1) != ERR && strlen(input) > 0) {
         snprintf(options->output_path, MAX_PATH_SIZE, "%s", input);
     }
+    noecho();  // Disable echo after input
     
     // Confirmation
     mvprintw(27, 4, "Export %d-%02d-%02d to %d-%02d-%02d in %s format? (y/N): ",
@@ -239,7 +261,12 @@ int show_export_dialog(app_state_t *state, export_options_t *options) {
              (options->format == EXPORT_FORMAT_PDF) ? "PDF" : "Markdown");
     refresh();
     
-    if (getnstr(input, sizeof(input) - 1) == ERR) return 0;
+    echo();  // Enable echo to show user input
+    if (getnstr(input, sizeof(input) - 1) == ERR) {
+        noecho();  // Restore noecho before returning
+        return 0;
+    }
+    noecho();  // Disable echo after input
     return (input[0] == 'y' || input[0] == 'Y');
 }
 
