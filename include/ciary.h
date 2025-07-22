@@ -124,6 +124,9 @@ int collect_entries_in_range(const export_options_t *options, const config_t *co
 int export_to_html(const export_options_t *options, const config_t *config, char **entry_files, int file_count);
 int export_to_pdf(const export_options_t *options, const config_t *config, char **entry_files, int file_count);
 int export_to_markdown(const export_options_t *options, const config_t *config, char **entry_files, int file_count);
+#ifdef HAVE_LIBHARU
+int export_to_pdf_native(const export_options_t *options, const config_t *config, char **entry_files, int file_count);
+#endif
 void show_progress_bar(const char *message, int current, int total);
 void calculate_date_range(date_range_preset_t preset, date_t current_date, date_t *start, date_t *end);
 

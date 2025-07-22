@@ -2,6 +2,11 @@
 #include <dirent.h>
 #include <sys/wait.h>
 
+#ifdef HAVE_LIBHARU
+#include <hpdf.h>
+#include <math.h>
+#endif
+
 // Calculate date range based on preset
 void calculate_date_range(date_range_preset_t preset, date_t current_date, date_t *start, date_t *end) {
     *start = current_date;
@@ -130,27 +135,66 @@ int show_export_dialog(app_state_t *state, export_options_t *options) {
         calculate_date_range(preset, state->current_date, &options->start_date, &options->end_date);
     }
     
-    // Format selection
+    // Format selection with dynamic availability
     mvprintw(16, 4, "Export format:");
-    mvprintw(17, 6, "1. HTML");
-    mvprintw(18, 6, "2. PDF");
-    mvprintw(19, 6, "3. Markdown");
+    mvprintw(17, 6, "1. HTML (always available)");
     
-    mvprintw(21, 4, "Format [1-3]: ");
+    // Check PDF availability
+    int pdf_available = 0;
+    char pdf_note[256] = "";
+    
+#ifdef HAVE_LIBHARU
+    pdf_available = 1;
+    strcpy(pdf_note, "2. PDF (native libHaru)");
+#else
+    // Check for external PDF tools
+    if (system("which wkhtmltopdf > /dev/null 2>&1") == 0) {
+        pdf_available = 1;
+        strcpy(pdf_note, "2. PDF (via wkhtmltopdf)");
+    } else if (system("which weasyprint > /dev/null 2>&1") == 0) {
+        pdf_available = 1;
+        strcpy(pdf_note, "2. PDF (via weasyprint)");
+    } else {
+        strcpy(pdf_note, "2. PDF (unavailable - install wkhtmltopdf/weasyprint or libHaru)");
+    }
+#endif
+    
+    mvprintw(18, 6, "%s", pdf_note);
+    mvprintw(19, 6, "3. Markdown (always available)");
+    
+    if (pdf_available) {
+        mvprintw(21, 4, "Format [1-3]: ");
+    } else {
+        mvprintw(21, 4, "Format [1,3] (PDF unavailable): ");
+    }
     refresh();
     
     if (getnstr(input, sizeof(input) - 1) == ERR) return 0;
     choice = atoi(input);
     
     switch (choice) {
-        case 1: options->format = EXPORT_FORMAT_HTML; break;
-        case 2: options->format = EXPORT_FORMAT_PDF; break;
-        case 3: options->format = EXPORT_FORMAT_MARKDOWN; break;
-        default: return 0;
+        case 1: 
+            options->format = EXPORT_FORMAT_HTML; 
+            break;
+        case 2: 
+            if (pdf_available) {
+                options->format = EXPORT_FORMAT_PDF;
+            } else {
+                mvprintw(23, 4, "PDF export not available. Press any key to continue...");
+                refresh();
+                getch();
+                return 0;
+            }
+            break;
+        case 3: 
+            options->format = EXPORT_FORMAT_MARKDOWN; 
+            break;
+        default: 
+            return 0;
     }
     
     // Output location
-    mvprintw(23, 4, "Output directory [%s]: ", options->output_path);
+    mvprintw(25, 4, "Output directory [%s]: ", options->output_path);
     refresh();
     
     if (getnstr(input, sizeof(input) - 1) != ERR && strlen(input) > 0) {
@@ -158,7 +202,7 @@ int show_export_dialog(app_state_t *state, export_options_t *options) {
     }
     
     // Confirmation
-    mvprintw(25, 4, "Export %d-%02d-%02d to %d-%02d-%02d in %s format? (y/N): ",
+    mvprintw(27, 4, "Export %d-%02d-%02d to %d-%02d-%02d in %s format? (y/N): ",
              options->start_date.year, options->start_date.month, options->start_date.day,
              options->end_date.year, options->end_date.month, options->end_date.day,
              (options->format == EXPORT_FORMAT_HTML) ? "HTML" :
@@ -348,13 +392,232 @@ int export_to_html(const export_options_t *options, const config_t *config,
     return 1;
 }
 
-// Export entries to PDF (using wkhtmltopdf)
+#ifdef HAVE_LIBHARU
+// LibHaru error handler
+void error_handler(HPDF_STATUS error_no, HPDF_STATUS detail_no, void *user_data) {
+    (void)user_data;  // Suppress unused parameter warning
+    fprintf(stderr, "ERROR: libHaru error 0x%04X, detail 0x%04X\n", (HPDF_UINT)error_no, (HPDF_UINT)detail_no);
+}
+
+// Export entries to PDF using native libHaru
+int export_to_pdf_native(const export_options_t *options, const config_t *config, 
+                         char **entry_files, int file_count) {
+    HPDF_Doc pdf;
+    HPDF_Page page;
+    HPDF_Font title_font, date_font, time_font, content_font;
+    char output_file[MAX_PATH_SIZE];
+    FILE *input;
+    char line[MAX_LINE_SIZE];
+    float y_position;
+    const float margin = 50.0;
+    const float page_width = 595.0;   // A4 width in points
+    const float page_height = 842.0;  // A4 height in points
+    const float content_width = page_width - (margin * 2);
+    
+    // Create output filename
+    snprintf(output_file, MAX_PATH_SIZE, "%s/ciary_export_%d-%02d-%02d_to_%d-%02d-%02d.pdf",
+             options->output_path,
+             options->start_date.year, options->start_date.month, options->start_date.day,
+             options->end_date.year, options->end_date.month, options->end_date.day);
+    
+    // Create PDF document
+    pdf = HPDF_New(error_handler, NULL);
+    if (!pdf) {
+        return 0;
+    }
+    
+    // Set compression mode
+    HPDF_SetCompressionMode(pdf, HPDF_COMP_ALL);
+    
+    // Create first page
+    page = HPDF_AddPage(pdf);
+    HPDF_Page_SetSize(page, HPDF_PAGE_SIZE_A4, HPDF_PAGE_PORTRAIT);
+    
+    // Load fonts
+    title_font = HPDF_GetFont(pdf, "Helvetica-Bold", NULL);
+    date_font = HPDF_GetFont(pdf, "Helvetica-Bold", NULL);
+    time_font = HPDF_GetFont(pdf, "Helvetica-BoldOblique", NULL);
+    content_font = HPDF_GetFont(pdf, "Helvetica", NULL);
+    
+    // Initial Y position
+    y_position = page_height - margin;
+    
+    // Title
+    HPDF_Page_SetFontAndSize(page, title_font, 20);
+    HPDF_Page_BeginText(page);
+    char title[256];
+    snprintf(title, sizeof(title), "Ciary Export: %d-%02d-%02d to %d-%02d-%02d",
+             options->start_date.year, options->start_date.month, options->start_date.day,
+             options->end_date.year, options->end_date.month, options->end_date.day);
+    
+    float title_width = HPDF_Page_TextWidth(page, title);
+    HPDF_Page_TextOut(page, (page_width - title_width) / 2, y_position, title);
+    HPDF_Page_EndText(page);
+    
+    y_position -= 40;
+    
+    // Subtitle
+    HPDF_Page_SetFontAndSize(page, content_font, 10);
+    HPDF_Page_BeginText(page);
+    char subtitle[] = "Generated by Ciary - A minimalistic TUI diary application";
+    float subtitle_width = HPDF_Page_TextWidth(page, subtitle);
+    HPDF_Page_TextOut(page, (page_width - subtitle_width) / 2, y_position, subtitle);
+    HPDF_Page_EndText(page);
+    
+    y_position -= 30;
+    
+    // Draw separator line
+    HPDF_Page_SetLineWidth(page, 1);
+    HPDF_Page_MoveTo(page, margin, y_position);
+    HPDF_Page_LineTo(page, page_width - margin, y_position);
+    HPDF_Page_Stroke(page);
+    
+    y_position -= 20;
+    
+    // Process each entry file
+    for (int i = 0; i < file_count; i++) {
+        show_progress_bar("Generating native PDF", i + 1, file_count);
+        
+        input = fopen(entry_files[i], "r");
+        if (!input) continue;
+        
+        // Extract date from filename
+        char *filename = strrchr(entry_files[i], '/');
+        if (filename) filename++;
+        else filename = entry_files[i];
+        
+        // Check if we need a new page
+        if (y_position < margin + 100) {
+            page = HPDF_AddPage(pdf);
+            HPDF_Page_SetSize(page, HPDF_PAGE_SIZE_A4, HPDF_PAGE_PORTRAIT);
+            y_position = page_height - margin;
+        }
+        
+        // Date header
+        HPDF_Page_SetFontAndSize(page, date_font, 16);
+        HPDF_Page_BeginText(page);
+        HPDF_Page_TextOut(page, margin, y_position, filename);
+        HPDF_Page_EndText(page);
+        y_position -= 25;
+        
+        // Process file content
+        int in_time_section = 0;
+        while (fgets(line, sizeof(line), input) && y_position > margin + 20) {
+            // Remove newline
+            size_t len = strlen(line);
+            if (len > 0 && line[len - 1] == '\n') {
+                line[len - 1] = '\0';
+                len--;
+            }
+            
+            // Skip empty lines
+            if (len == 0) {
+                y_position -= 10;
+                continue;
+            }
+            
+            // Check if we need a new page
+            if (y_position < margin + 50) {
+                page = HPDF_AddPage(pdf);
+                HPDF_Page_SetSize(page, HPDF_PAGE_SIZE_A4, HPDF_PAGE_PORTRAIT);
+                y_position = page_height - margin;
+            }
+            
+            // Check for time headers (## HH:MM:SS)
+            if (strncmp(line, "## ", 3) == 0) {
+                y_position -= 10; // Add space before time section
+                HPDF_Page_SetFontAndSize(page, time_font, 12);
+                HPDF_Page_BeginText(page);
+                HPDF_Page_TextOut(page, margin + 20, y_position, line + 3);
+                HPDF_Page_EndText(page);
+                y_position -= 20;
+                in_time_section = 1;
+            }
+            // Skip date headers (# YYYY-MM-DD)
+            else if (strncmp(line, "# ", 2) == 0) {
+                continue;
+            }
+            // Regular content
+            else if (strlen(line) > 0) {
+                HPDF_Page_SetFontAndSize(page, content_font, 10);
+                
+                // Simple word wrapping
+                char *word = strtok(line, " ");
+                char current_line[512] = "";
+                float line_width = 0;
+                
+                while (word) {
+                    char test_line[512];
+                    if (strlen(current_line) > 0) {
+                        snprintf(test_line, sizeof(test_line), "%s %s", current_line, word);
+                    } else {
+                        snprintf(test_line, sizeof(test_line), "%s", word);
+                    }
+                    
+                    HPDF_Page_SetFontAndSize(page, content_font, 10);
+                    float test_width = HPDF_Page_TextWidth(page, test_line);
+                    
+                    if (test_width <= content_width - 40) {
+                        strcpy(current_line, test_line);
+                    } else {
+                        // Print current line and start new one
+                        if (strlen(current_line) > 0) {
+                            HPDF_Page_BeginText(page);
+                            HPDF_Page_TextOut(page, margin + 40, y_position, current_line);
+                            HPDF_Page_EndText(page);
+                            y_position -= 15;
+                        }
+                        strcpy(current_line, word);
+                        
+                        // Check if we need a new page
+                        if (y_position < margin + 30) {
+                            page = HPDF_AddPage(pdf);
+                            HPDF_Page_SetSize(page, HPDF_PAGE_SIZE_A4, HPDF_PAGE_PORTRAIT);
+                            y_position = page_height - margin;
+                        }
+                    }
+                    word = strtok(NULL, " ");
+                }
+                
+                // Print remaining line
+                if (strlen(current_line) > 0) {
+                    HPDF_Page_BeginText(page);
+                    HPDF_Page_TextOut(page, margin + 40, y_position, current_line);
+                    HPDF_Page_EndText(page);
+                    y_position -= 15;
+                }
+            }
+        }
+        
+        y_position -= 20; // Space between entries
+        fclose(input);
+    }
+    
+    // Save PDF
+    HPDF_STATUS status = HPDF_SaveToFile(pdf, output_file);
+    HPDF_Free(pdf);
+    
+    return (status == HPDF_OK);
+}
+#endif
+
+// Export entries to PDF with intelligent fallback
 int export_to_pdf(const export_options_t *options, const config_t *config, 
                  char **entry_files, int file_count) {
+#ifdef HAVE_LIBHARU
+    // Try native libHaru first
+    int result = export_to_pdf_native(options, config, entry_files, file_count);
+    if (result) {
+        return 1;
+    }
+    // If native fails, fall through to external tools
+#endif
+    
+    // Fallback to external tools
     char html_file[MAX_PATH_SIZE];
     char pdf_file[MAX_PATH_SIZE];
     char command[MAX_PATH_SIZE * 2];
-    int result;
+    int ext_result;
     
     // First create HTML file
     if (!export_to_html(options, config, entry_files, file_count)) {
@@ -376,23 +639,26 @@ int export_to_pdf(const export_options_t *options, const config_t *config,
     snprintf(command, sizeof(command), "which wkhtmltopdf > /dev/null 2>&1");
     if (system(command) == 0) {
         snprintf(command, sizeof(command), "wkhtmltopdf '%s' '%s' 2>/dev/null", html_file, pdf_file);
+        show_progress_bar("Converting HTML to PDF (wkhtmltopdf)", 1, 1);
     } else {
         snprintf(command, sizeof(command), "which weasyprint > /dev/null 2>&1");
         if (system(command) == 0) {
             snprintf(command, sizeof(command), "weasyprint '%s' '%s' 2>/dev/null", html_file, pdf_file);
+            show_progress_bar("Converting HTML to PDF (weasyprint)", 1, 1);
         } else {
-            // No PDF converter available
+            // No PDF converter available - keep HTML file as fallback
             return 0;
         }
     }
     
-    show_progress_bar("Converting to PDF", 1, 1);
-    result = system(command);
+    ext_result = system(command);
     
-    // Clean up temporary HTML file
-    unlink(html_file);
+    // Clean up temporary HTML file only if PDF was created successfully
+    if (ext_result == 0) {
+        unlink(html_file);
+    }
     
-    return (result == 0);
+    return (ext_result == 0);
 }
 
 // Export entries to Markdown format
