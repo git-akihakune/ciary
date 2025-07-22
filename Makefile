@@ -9,14 +9,25 @@ LDFLAGS = -lncurses
 # Build directories
 SRCDIR = src
 INCDIR = include
+TESTDIR = tests
 BUILDDIR = build
 OBJDIR = $(BUILDDIR)/obj
 DISTDIR = $(BUILDDIR)/dist
+TESTOBJDIR = $(BUILDDIR)/test_obj
 
 # Source files and objects
 SOURCES = $(wildcard $(SRCDIR)/*.c)
 OBJECTS = $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 TARGET = ciary
+
+# Test files and objects
+TEST_SOURCES = $(wildcard $(TESTDIR)/*.c)
+TEST_OBJECTS = $(TEST_SOURCES:$(TESTDIR)/%.c=$(TESTOBJDIR)/%.o)
+TEST_TARGET = $(BUILDDIR)/test_runner
+
+# Library objects (exclude main.o for testing)
+LIB_SOURCES = $(filter-out $(SRCDIR)/main.c, $(SOURCES))
+LIB_OBJECTS = $(LIB_SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 
 # Platform detection
 UNAME_S := $(shell uname -s)
@@ -59,6 +70,7 @@ endif
 
 .PHONY: all clean install uninstall debug release dist-all dist-clean
 .PHONY: linux-x86_64 linux-aarch64 darwin-universal freebsd-x86_64 freebsd-aarch64 openbsd-x86_64 netbsd-x86_64
+.PHONY: test test-utils test-config test-file-io test-integration test-ui test-personalization test-clean test-all
 
 # Default target
 all: $(TARGET)
@@ -73,6 +85,9 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 $(OBJDIR):
 	mkdir -p $(OBJDIR)
 
+$(TESTOBJDIR):
+	mkdir -p $(TESTOBJDIR)
+
 # Debug build
 debug: CFLAGS += -g -DDEBUG
 debug: $(TARGET)
@@ -80,6 +95,50 @@ debug: $(TARGET)
 # Release build with optimizations
 release: CFLAGS += -O2 -DNDEBUG
 release: $(TARGET)
+
+# Test builds and execution
+$(TESTOBJDIR)/%.o: $(TESTDIR)/%.c | $(TESTOBJDIR)
+	$(CC) $(CFLAGS) -I$(TESTDIR) -c $< -o $@
+
+$(TEST_TARGET): $(LIB_OBJECTS) $(TEST_OBJECTS)
+	$(CC) $(LIB_OBJECTS) $(TEST_OBJECTS) -o $@ $(LDFLAGS)
+
+test: $(TEST_TARGET)
+	@echo "Running all tests..."
+	@$(TEST_TARGET) all
+
+test-utils: $(TEST_TARGET)
+	@echo "Running utility function tests..."
+	@$(TEST_TARGET) utils
+
+test-config: $(TEST_TARGET)
+	@echo "Running configuration system tests..."
+	@$(TEST_TARGET) config
+
+test-file-io: $(TEST_TARGET)
+	@echo "Running file I/O tests..."
+	@$(TEST_TARGET) file_io
+
+test-integration: $(TEST_TARGET)
+	@echo "Running integration tests..."
+	@$(TEST_TARGET) integration
+
+test-ui: $(TEST_TARGET)
+	@echo "Running UI/UX tests..."
+	@$(TEST_TARGET) ui
+
+test-personalization: $(TEST_TARGET)
+	@echo "Running personalization system tests..."
+	@$(TEST_TARGET) personalization
+
+test-verbose: $(TEST_TARGET)
+	@echo "Running all tests (verbose)..."
+	@$(TEST_TARGET) -v all
+
+test-clean:
+	rm -rf $(TESTOBJDIR) $(TEST_TARGET)
+
+test-all: clean test
 
 # Cross-compilation targets
 
@@ -177,6 +236,18 @@ help:
 	@echo "  debug         - Build with debug symbols"
 	@echo "  release       - Build optimized release"
 	@echo "  native        - Build release with platform suffix"
+	@echo ""
+	@echo "Testing:"
+	@echo "  test          - Run all tests"
+	@echo "  test-utils    - Run utility function tests"
+	@echo "  test-config   - Run configuration tests"
+	@echo "  test-file-io  - Run file I/O tests"
+	@echo "  test-integration - Run integration tests"
+	@echo "  test-ui       - Run UI/UX tests"
+	@echo "  test-personalization - Run personalization tests"
+	@echo "  test-verbose  - Run all tests with verbose output"
+	@echo "  test-clean    - Clean test artifacts"
+	@echo "  test-all      - Clean build and run all tests"
 	@echo ""
 	@echo "Cross-compilation:"
 	@echo "  linux-x86_64    - Build for Linux x86_64"
