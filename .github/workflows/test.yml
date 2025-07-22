@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, "**" ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
 
 jobs:
   test:
@@ -31,15 +31,17 @@ jobs:
     - name: Build project
       run: make release
 
-    - name: Run tests
-      run: make test-verbose
+    - name: Run comprehensive tests
+      run: make test
 
-    - name: Test specific suites
+    - name: Run all test suites individually
       run: |
         make test-utils
         make test-config
         make test-file-io
         make test-integration
+        make test-ui
+        make test-personalization
 
   code-quality:
     runs-on: ubuntu-latest
