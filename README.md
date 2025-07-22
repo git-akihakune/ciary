@@ -153,33 +153,108 @@ enable_personalization=true
 ### Development Commands
 
 ```bash
-# Clean build artifacts
-make clean
+# View all available build targets
+make help
 
-# Build with debug symbols
-make debug
+# Standard builds
+make                    # Build for current platform
+make debug             # Build with debug symbols
+make release           # Build optimized release
 
-# Install system-wide
-sudo make install
+# Cross-platform builds
+make linux-x86_64      # Linux x86_64 (static)
+make linux-aarch64     # Linux ARM64 (static)
+make darwin-universal   # macOS Universal Binary (x86_64 + ARM64)
+make freebsd-x86_64    # FreeBSD x86_64
+make freebsd-aarch64   # FreeBSD ARM64
+make openbsd-x86_64    # OpenBSD x86_64
+make netbsd-x86_64     # NetBSD x86_64
 
-# Uninstall
-sudo make uninstall
+# Distribution builds
+make native            # Build native with platform suffix
+make dist-all          # Build all cross-platform targets
+
+# Maintenance
+make clean             # Remove build artifacts
+make dist-clean        # Remove build and distribution artifacts
+sudo make install      # Install system-wide
+sudo make uninstall    # Remove installation
 ```
+
+### Release Building
+
+For creating release archives:
+
+```bash
+# Build release archives for all platforms
+./build-release.sh v1.0.0
+
+# Build with custom version
+./build-release.sh v1.2.3-beta
+
+# Build with default version (dev)
+./build-release.sh
+```
+
+This creates compressed archives in `build/release/` with:
+- Binaries for all supported platforms
+- Installation instructions
+- Documentation (README, LICENSE)
+
+### Automated Releases
+
+Ciary uses GitHub Actions for automated releases:
+
+- **Trigger**: Push a version tag (e.g., `git tag v1.0.0 && git push --tags`)
+- **Builds**: Automatically builds for all supported platforms
+- **Release**: Creates GitHub release with binaries and changelog
+- **Formats**: Provides both `.tar.gz` and `.zip` archives
 
 ### Project Structure
 
 ```
 ciary/
-├── src/          # Source code
-│   ├── main.c    # Application entry point
-│   ├── calendar.c # Calendar view and navigation
-│   ├── file_io.c # File operations and editor integration
-│   ├── config.c  # Configuration management
-│   └── utils.c   # Utilities and helper functions
-├── include/      # Header files
-│   └── ciary.h   # Main header with declarations
-├── Makefile      # Build system
-└── README.md     # This file
+├── src/                    # Source code
+│   ├── main.c              # Application entry point
+│   ├── calendar.c          # Calendar view and navigation
+│   ├── file_io.c           # File operations and editor integration
+│   ├── config.c            # Configuration management
+│   └── utils.c             # Utilities and helper functions
+├── include/                # Header files
+│   └── ciary.h             # Main header with declarations
+├── build/                  # Build artifacts (created during build)
+│   ├── obj/               # Object files
+│   ├── dist/              # Cross-platform binaries
+│   └── release/           # Release archives
+├── .github/workflows/      # GitHub Actions CI/CD
+│   └── release.yml        # Automated release workflow
+├── Makefile               # Advanced cross-platform build system
+├── build-release.sh       # Release building script
+├── CLAUDE.md             # Project documentation for AI assistants
+├── LICENSE               # MIT License
+└── README.md             # This file
+```
+
+### Cross-Platform Support
+
+Ciary supports multiple platforms and architectures:
+
+#### Supported Platforms
+- **Linux**: x86_64, ARM64 (aarch64) - Static binaries for maximum compatibility
+- **macOS**: Universal binaries (Intel x86_64 + Apple Silicon ARM64)
+- **FreeBSD**: x86_64, ARM64
+- **OpenBSD**: x86_64
+- **NetBSD**: x86_64
+
+#### Build Requirements for Cross-Compilation
+Cross-compilation requires appropriate toolchains:
+
+```bash
+# Ubuntu/Debian - Install cross-compilers
+sudo apt install gcc-aarch64-linux-gnu
+
+# The build system gracefully handles missing cross-compilers
+# and builds what's available
 ```
 
 ### Architecture
@@ -190,6 +265,7 @@ Ciary follows a modular design:
 - **File I/O Module**: Manages diary files and external editor/viewer integration
 - **Configuration Module**: Handles settings, first-run setup, and XDG compliance
 - **Utilities Module**: Date/time functions and personalized messaging system
+- **Build System**: Advanced Makefile with cross-platform support and CI/CD integration
 
 ## Contributing
 
@@ -221,12 +297,16 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Roadmap
 
+- [x] **Cross-platform binary releases** - Automated builds for Linux, macOS, and BSD variants
 - [ ] Weekly and yearly calendar views
 - [ ] Entry search functionality
 - [ ] Export capabilities (PDF, HTML)
 - [ ] Entry templates
 - [ ] Mood tracking integration
-- [ ] Cross-platform binary releases
+- [ ] Plugin system for extensions
+- [ ] Encrypted storage option
+- [ ] Entry synchronization between devices
+
 ...
 
 ---
