@@ -65,17 +65,13 @@ int main(int argc, char *argv[]) {
     
     init_app(&state);
     
-    // Show welcome message briefly
-    clear();
-    mvprintw(LINES / 2, (COLS - 20) / 2, "Welcome to Ciary!");
-    mvprintw(LINES / 2 + 1, (COLS - 25) / 2, "Press any key to start...");
-    refresh();
-    getch();
+    // Show personalized welcome message
+    show_personalized_welcome();
     
     run_app(&state);
     
     cleanup_app();
     
-    printf("Thank you for using Ciary!\n");
+    show_personalized_goodbye();
     return 0;
 }

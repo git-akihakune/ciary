@@ -61,4 +61,13 @@ int date_compare(date_t a, date_t b);
 void draw_help(void);
 void draw_status_bar(app_state_t *state);
 
+// Welcome message functions
+char* get_username(void);
+char* get_time_greeting(void);
+char* get_season_info(void);
+char* get_day_phase(void);
+void generate_welcome_message(char *message, size_t size);
+void show_personalized_welcome(void);
+void show_personalized_goodbye(void);
+
 #endif
