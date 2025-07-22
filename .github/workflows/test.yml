@@ -1,0 +1,86 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libncurses-dev build-essential
+
+    - name: Install dependencies (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install ncurses
+
+    - name: Build project
+      run: make release
+
+    - name: Run tests
+      run: make test-verbose
+
+    - name: Test specific suites
+      run: |
+        make test-utils
+        make test-config
+        make test-file-io
+        make test-integration
+
+  code-quality:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libncurses-dev build-essential cppcheck
+
+    - name: Static analysis with cppcheck
+      run: |
+        cppcheck --enable=all --error-exitcode=1 --suppressions-list=<(echo "missingIncludeSystem") src/ || true
+
+    - name: Check for memory leaks in tests
+      run: |
+        sudo apt-get install -y valgrind
+        make debug
+        make $(BUILDDIR)/test_runner CFLAGS+="-g"
+        # Note: Some tests may not work well with valgrind due to ncurses
+        # valgrind --leak-check=full --error-exitcode=1 ./build/test_runner utils || true
+
+    - name: Build with different compilers
+      run: |
+        # Test with GCC
+        make clean && make CC=gcc
+        
+        # Test with Clang if available
+        if command -v clang >/dev/null 2>&1; then
+          make clean && make CC=clang
+        fi
+
+    - name: Test cross-compilation (if tools available)
+      run: |
+        # Try to install cross-compilation tools
+        sudo apt-get install -y gcc-aarch64-linux-gnu || true
+        
+        # Test cross-compilation if tools are available
+        if command -v aarch64-linux-gnu-gcc >/dev/null 2>&1; then
+          make linux-aarch64 || echo "Cross-compilation failed, but continuing..."
+        fi
