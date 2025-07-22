@@ -139,8 +139,7 @@ jobs:
         echo "Checking README and documentation..."
         ls -la README.md
         ls -la tests/README.md
-        ls -la CLAUDE.md
-        
+ 
   build-artifacts:
     name: Build Release Artifacts
     runs-on: ubuntu-latest
