@@ -1,8 +1,10 @@
-# 📔 Ciary
+# Ciary
 
 **A minimalistic TUI (Terminal User Interface) diary application written in C**
 
 Ciary helps you maintain a personal journal with a beautiful calendar interface, automatic time tracking, and seamless integration with your favorite text editor. Your entries are stored as plain Markdown files on your local machine - no cloud, no tracking, just your thoughts.
+
+<img width="752" height="567" alt="Screenshot 2025-07-22 at 17 03 43" src="https://github.com/user-attachments/assets/b8203761-acbf-4ef4-bc0d-f580af884d3b" />
 
 ## Features
 
