@@ -6,27 +6,12 @@ CC = gcc
 CFLAGS = -Wall -Wextra -std=c99 -Iinclude
 LDFLAGS = -lncurses
 
-# vcpkg integration
-VCPKG_ROOT ?= $(shell which vcpkg 2>/dev/null | xargs dirname 2>/dev/null)
-ifneq ($(VCPKG_ROOT),)
-    VCPKG_INSTALLED = vcpkg_installed/$(VCPKG_TARGET_TRIPLET)
-    VCPKG_TARGET_TRIPLET ?= x64-linux
-    
-    # Check if libharu is available via vcpkg
-    LIBHARU_AVAILABLE := $(shell test -d "$(VCPKG_INSTALLED)/include/hpdf.h" && echo 1 || echo 0)
-    
-    ifeq ($(LIBHARU_AVAILABLE),1)
-        CFLAGS += -I$(VCPKG_INSTALLED)/include -DHAVE_LIBHARU
-        LDFLAGS += -L$(VCPKG_INSTALLED)/lib -lharu -lm -lz -lpng
-    endif
-else
-    # Fallback: try to find libharu via pkg-config
-    LIBHARU_AVAILABLE := $(shell pkg-config --exists libharu 2>/dev/null && echo 1 || echo 0)
-    
-    ifeq ($(LIBHARU_AVAILABLE),1)
-        CFLAGS += $(shell pkg-config --cflags libharu) -DHAVE_LIBHARU
-        LDFLAGS += $(shell pkg-config --libs libharu)
-    endif
+# libHaru detection via pkg-config
+LIBHARU_AVAILABLE := $(shell pkg-config --exists libharu 2>/dev/null && echo 1 || echo 0)
+
+ifeq ($(LIBHARU_AVAILABLE),1)
+    CFLAGS += $(shell pkg-config --cflags libharu) -DHAVE_LIBHARU
+    LDFLAGS += $(shell pkg-config --libs libharu)
 endif
 
 # Build directories
@@ -91,7 +76,7 @@ else
     ARCH = $(UNAME_M)
 endif
 
-.PHONY: all clean install uninstall debug release dist-all dist-clean vcpkg-install vcpkg-status
+.PHONY: all clean install uninstall debug release dist-all dist-clean deps-status
 .PHONY: linux-x86_64 darwin-universal freebsd-x86_64 openbsd-x86_64 netbsd-x86_64
 .PHONY: test test-utils test-config test-file-io test-integration test-ui test-personalization test-clean test-all
 
@@ -271,8 +256,7 @@ help:
 	@echo "  dist-all      - Build all distribution targets"
 	@echo ""
 	@echo "Dependencies:"
-	@echo "  vcpkg-install - Install dependencies via vcpkg"
-	@echo "  vcpkg-status  - Show dependency status"
+	@echo "  deps-status   - Show dependency status and installation hints"
 	@echo ""
 	@echo "Maintenance:"
 	@echo "  clean         - Remove build artifacts"
@@ -283,46 +267,45 @@ help:
 	@echo ""
 	@echo "Current platform: $(PLATFORM)-$(ARCH)"
 
-# vcpkg dependency management
-vcpkg-install:
-	@echo "Installing dependencies via vcpkg..."
-	@if command -v vcpkg >/dev/null 2>&1; then \
-		vcpkg install; \
+# Dependency status and installation hints
+deps-status:
+	@echo "Ciary Dependency Status"
+	@echo "======================="
+	@echo ""
+	@echo "Required:"
+	@if pkg-config --exists ncurses 2>/dev/null; then \
+		echo "✓ ncurses: available"; \
 	else \
-		echo "vcpkg not found. Please install vcpkg first:"; \
-		echo "  Linux/macOS: git clone https://github.com/Microsoft/vcpkg.git && ./vcpkg/bootstrap-vcpkg.sh"; \
-		echo "  Add to PATH: export PATH=$$PATH:$$PWD/vcpkg"; \
-		exit 1; \
-	fi
-
-vcpkg-status:
-	@echo "Dependency Status:"
-	@echo "=================="
-	@if command -v vcpkg >/dev/null 2>&1; then \
-		echo "✓ vcpkg found: $$(which vcpkg)"; \
-		if [ -d "vcpkg_installed" ]; then \
-			echo "✓ Dependencies installed"; \
-			if [ -f "vcpkg_installed/$(VCPKG_TARGET_TRIPLET)/include/hpdf.h" ]; then \
-				echo "✓ libHaru available - Native PDF export enabled"; \
-			else \
-				echo "⚠ libHaru not found - Using external PDF tools"; \
-			fi; \
-		else \
-			echo "⚠ Dependencies not installed. Run 'make vcpkg-install'"; \
-		fi; \
-	else \
-		echo "✗ vcpkg not found"; \
-		echo "  Install: git clone https://github.com/Microsoft/vcpkg.git && ./vcpkg/bootstrap-vcpkg.sh"; \
+		echo "✗ ncurses: missing"; \
 	fi
 	@echo ""
-	@echo "Alternative PDF tools:"
+	@echo "PDF Export Options:"
+ifeq ($(LIBHARU_AVAILABLE),1)
+	@echo "✓ libHaru: available (native PDF generation enabled)"
+else
+	@echo "⚠ libHaru: not available"
+	@echo "  Install:"
+	@echo "    Ubuntu/Debian: sudo apt install libharu-dev"
+	@echo "    macOS:         brew install libharu"
+	@echo "    FreeBSD:       pkg install libharu"
+	@echo "    Arch Linux:    sudo pacman -S libharu"
+endif
+	@echo ""
+	@echo "External PDF Tools:"
 	@if command -v wkhtmltopdf >/dev/null 2>&1; then \
-		echo "✓ wkhtmltopdf found"; \
+		echo "✓ wkhtmltopdf: available"; \
 	else \
-		echo "✗ wkhtmltopdf not found"; \
+		echo "⚠ wkhtmltopdf: not available"; \
+		echo "  Install:"; \
+		echo "    Ubuntu/Debian: sudo apt install wkhtmltopdf"; \
+		echo "    macOS:         brew install wkhtmltopdf"; \
+		echo "    FreeBSD:       pkg install wkhtmltopdf"; \
 	fi
 	@if command -v weasyprint >/dev/null 2>&1; then \
-		echo "✓ weasyprint found"; \
+		echo "✓ weasyprint: available"; \
 	else \
-		echo "✗ weasyprint not found"; \
+		echo "⚠ weasyprint: not available"; \
+		echo "  Install:       pip install weasyprint"; \
 	fi
+	@echo ""
+	@echo "Note: HTML and Markdown export are always available"

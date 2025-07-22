@@ -24,19 +24,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libncurses-dev gcc-multilib pkg-config
-          
-      - name: Setup vcpkg
-        run: |
-          git clone https://github.com/Microsoft/vcpkg.git
-          ./vcpkg/bootstrap-vcpkg.sh
-          echo "$(pwd)/vcpkg" >> $GITHUB_PATH
-          
-      - name: Install libHaru via vcpkg
-        run: |
-          vcpkg install libharu
-        env:
-          VCPKG_TARGET_TRIPLET: x64-linux
+          sudo apt-get install -y libncurses-dev gcc-multilib pkg-config libharu-dev
 
 
       - name: Build for Linux x86_64
@@ -63,9 +51,10 @@ jobs:
           ==============================
           
           1. Make executable: chmod +x ciary
-          2. Install dependencies: sudo apt install libncurses-dev  
-          3. Move to PATH: sudo mv ciary /usr/local/bin/
-          4. Run: ciary
+          2. Install dependencies: sudo apt install libncurses-dev
+          3. Optional PDF support: sudo apt install libharu-dev wkhtmltopdf  
+          4. Move to PATH: sudo mv ciary /usr/local/bin/
+          5. Run: ciary
           EOF
           
           tar -czf "../../release/${archive_name}.tar.gz" "$archive_name"
@@ -84,19 +73,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew install ncurses pkg-config
-          
-      - name: Setup vcpkg
-        run: |
-          git clone https://github.com/Microsoft/vcpkg.git
-          ./vcpkg/bootstrap-vcpkg.sh
-          echo "$(pwd)/vcpkg" >> $GITHUB_PATH
-          
-      - name: Install libHaru via vcpkg
-        run: |
-          vcpkg install libharu
-        env:
-          VCPKG_TARGET_TRIPLET: x64-osx
+          brew install ncurses pkg-config libharu
 
       - name: Build universal binary
         run: |
@@ -127,8 +104,9 @@ jobs:
           
           1. Make executable: chmod +x ciary
           2. Install dependencies: brew install ncurses
-          3. Move to PATH: sudo mv ciary /usr/local/bin/
-          4. Run: ciary
+          3. Optional PDF support: brew install libharu wkhtmltopdf
+          4. Move to PATH: sudo mv ciary /usr/local/bin/
+          5. Run: ciary
           EOF
           
           tar -czf "../../release/${archive_name}.tar.gz" "$archive_name"
@@ -152,10 +130,7 @@ jobs:
           usesh: true
           mem: 2048
           prepare: |
-            pkg install -y ncurses gmake gcc pkgconf git
-            git clone https://github.com/Microsoft/vcpkg.git
-            ./vcpkg/bootstrap-vcpkg.sh
-            ./vcpkg/vcpkg install libharu
+            pkg install -y ncurses gmake gcc pkgconf libharu
           run: |
             gmake release
             mkdir -p build/dist
@@ -180,8 +155,9 @@ jobs:
           
           1. Make executable: chmod +x ciary
           2. Install dependencies: pkg install ncurses
-          3. Move to PATH: sudo mv ciary /usr/local/bin/
-          4. Run: ciary
+          3. Optional PDF support: pkg install libharu wkhtmltopdf
+          4. Move to PATH: sudo mv ciary /usr/local/bin/
+          5. Run: ciary
           EOF
           
           tar -czf "../../release/${archive_name}.tar.gz" "$archive_name"

@@ -1,108 +1,76 @@
 # Building Ciary
 
-This document provides comprehensive build instructions for Ciary across different platforms and dependency scenarios.
+Simple build instructions for the minimalistic TUI diary application.
 
 ## Quick Start
 
 ```bash
-# Clone the repository
+# Clone and build
 git clone https://github.com/git-akihakune/ciary.git
 cd ciary
-
-# Basic build (HTML and Markdown export only)
 make
 
-# Build with native PDF support
-make vcpkg-install  # Install dependencies
-make               # Build with libHaru support
+# Check what's available
+make deps-status
 ```
 
 ## Dependencies
 
-### Required Dependencies
+### Required
+- **ncurses**: For the TUI interface
+- **gcc**: C compiler
 
-- **libncurses**: TUI interface
-  - Ubuntu/Debian: `sudo apt install libncurses-dev`
-  - macOS: `brew install ncurses`
-  - FreeBSD: `pkg install ncurses`
-  - Arch Linux: `sudo pacman -S ncurses`
+### Optional (PDF Export)
+- **libharu**: Native PDF generation (recommended)
+- **wkhtmltopdf**: HTML-to-PDF converter
+- **weasyprint**: Alternative PDF converter
 
-### Optional Dependencies (PDF Export)
+## Installation by Platform
 
-Ciary supports multiple approaches for PDF export, in order of preference:
-
-1. **libHaru (Recommended)**: Native PDF generation, no external tools needed
-2. **wkhtmltopdf**: HTML-to-PDF conversion tool
-3. **weasyprint**: Alternative HTML-to-PDF converter
-
-## Build Methods
-
-### Method 1: Native PDF with vcpkg (Recommended)
-
-This method provides the best user experience with native PDF generation.
-
+### Ubuntu/Debian
 ```bash
-# Install vcpkg (if not already installed)
-git clone https://github.com/Microsoft/vcpkg.git
-./vcpkg/bootstrap-vcpkg.sh
-export PATH=$PATH:$(pwd)/vcpkg
+# Required
+sudo apt install libncurses-dev build-essential
 
-# Install dependencies and build
-make vcpkg-install
+# Optional PDF support
+sudo apt install libharu-dev wkhtmltopdf
+
+# Build
 make
 ```
 
-### Method 2: System Package Manager
-
-Install libHaru through your system package manager:
-
+### macOS
 ```bash
-# Ubuntu/Debian
-sudo apt install libharu-dev libncurses-dev
-make
+# Required
+brew install ncurses
 
-# macOS (with Homebrew)
-brew install libharu ncurses
-make
+# Optional PDF support  
+brew install libharu wkhtmltopdf
 
-# FreeBSD
-pkg install libharu ncurses
+# Build
+make
+```
+
+### FreeBSD
+```bash
+# Required
+pkg install ncurses gmake gcc
+
+# Optional PDF support
+pkg install libharu wkhtmltopdf
+
+# Build
 gmake
-
-# Arch Linux
-sudo pacman -S libharu ncurses
-make
 ```
 
-### Method 3: External PDF Tools
-
-Build without native PDF support and use external tools:
-
+### Arch Linux
 ```bash
-# Install base dependencies only
-sudo apt install libncurses-dev  # Ubuntu/Debian
-brew install ncurses              # macOS
-pkg install ncurses               # FreeBSD
+# Required
+sudo pacman -S ncurses base-devel
 
-# Build Ciary
-make
-
-# Install PDF conversion tools (optional)
-sudo apt install wkhtmltopdf      # Ubuntu/Debian
-brew install wkhtmltopdf          # macOS
-pkg install wkhtmltopdf           # FreeBSD
-
-# Alternative: Python-based converter
-pip install weasyprint
-```
-
-### Method 4: Minimal Build
-
-Build with only HTML and Markdown export support:
-
-```bash
-# Install only ncurses
-sudo apt install libncurses-dev
+# Optional PDF support
+sudo pacman -S libharu
+# wkhtmltopdf from AUR: yay -S wkhtmltopdf
 
 # Build
 make
@@ -111,219 +79,117 @@ make
 ## Build Targets
 
 ```bash
-# Standard builds
-make                 # Default build
-make debug          # Debug build with symbols
-make release        # Optimized release build
-
-# Dependency management
-make vcpkg-install  # Install vcpkg dependencies
-make vcpkg-status   # Check dependency status
-
-# Cross-compilation
-make linux-x86_64    # Linux x86_64 static binary
-make darwin-universal # macOS universal binary
-make freebsd-x86_64  # FreeBSD x86_64 binary
-
-# Testing
-make test           # Run all tests
-make test-verbose   # Verbose test output
-
-# Distribution
-make dist-all       # Build all distribution targets
-make native         # Build with platform suffix
-
-# Maintenance
-make clean          # Remove build artifacts
-make dist-clean     # Remove all artifacts
-make install        # Install to /usr/local/bin
-make uninstall      # Remove from system
+make              # Default build
+make debug        # Debug build with symbols
+make release      # Optimized release build
+make deps-status  # Check dependencies and show install hints
+make clean        # Remove build artifacts
+make install      # Install to /usr/local/bin
+make help         # Show all available targets
 ```
 
-## Platform-Specific Notes
+## PDF Export Options
 
-### Ubuntu/Debian
+Ciary automatically detects and uses the best available PDF method:
+
+1. **libharu** (best): Native generation, fast, no external tools
+2. **wkhtmltopdf**: High quality, requires external tool
+3. **weasyprint**: Good quality, requires Python
+4. **HTML fallback**: Always available
+
+Check what's available: `make deps-status`
+
+## Cross-Platform Builds
 
 ```bash
-# Full installation with native PDF
-sudo apt update
-sudo apt install libncurses-dev pkg-config git cmake ninja-build curl zip unzip tar
-git clone https://github.com/Microsoft/vcpkg.git
-./vcpkg/bootstrap-vcpkg.sh
-export PATH=$PATH:$(pwd)/vcpkg
-make vcpkg-install
-make
+make linux-x86_64     # Linux static binary
+make darwin-universal  # macOS universal binary  
+make freebsd-x86_64    # FreeBSD binary
 ```
 
-### macOS
+## Minimal Build
+
+Build with only HTML/Markdown export (no PDF):
 
 ```bash
-# Install dependencies
-brew install ncurses pkg-config git cmake ninja
-
-# Install vcpkg
-git clone https://github.com/Microsoft/vcpkg.git
-./vcpkg/bootstrap-vcpkg.sh
-export PATH=$PATH:$(pwd)/vcpkg
-
-# Build
-make vcpkg-install
-make
-```
-
-### FreeBSD
-
-```bash
-# Install dependencies
-pkg install ncurses gmake gcc pkgconf git cmake ninja
-
-# Install vcpkg
-git clone https://github.com/Microsoft/vcpkg.git
-./vcpkg/bootstrap-vcpkg.sh
-export PATH=$PATH:$(pwd)/vcpkg
-
-# Build
-gmake vcpkg-install
-gmake
-```
-
-### Arch Linux
-
-```bash
-# Install dependencies
-sudo pacman -S ncurses make gcc pkgconf git cmake ninja
-
-# Option 1: Use AUR package for libharu
-yay -S libharu
-
-# Option 2: Use vcpkg
-git clone https://github.com/Microsoft/vcpkg.git
-./vcpkg/bootstrap-vcpkg.sh
-export PATH=$PATH:$(pwd)/vcpkg
-make vcpkg-install
+# Install only ncurses
+sudo apt install libncurses-dev  # Ubuntu
+brew install ncurses             # macOS
+pkg install ncurses              # FreeBSD
 
 # Build
 make
+```
+
+## Development
+
+```bash
+# Debug build
+make debug
+
+# Run tests
+make test
+
+# Check for issues
+make deps-status
 ```
 
 ## Troubleshooting
 
-### Common Issues
-
-1. **"vcpkg not found"**
-   ```bash
-   # Install vcpkg manually
-   git clone https://github.com/Microsoft/vcpkg.git
-   ./vcpkg/bootstrap-vcpkg.sh
-   export PATH=$PATH:$(pwd)/vcpkg
-   ```
-
-2. **"libharu not found"**
-   ```bash
-   # Check status
-   make vcpkg-status
-   
-   # Install dependencies
-   make vcpkg-install
-   ```
-
-3. **"ncurses not found"**
-   ```bash
-   # Ubuntu/Debian
-   sudo apt install libncurses-dev
-   
-   # macOS
-   brew install ncurses
-   
-   # FreeBSD
-   pkg install ncurses
-   ```
-
-4. **PDF export fails**
-   ```bash
-   # Check available PDF tools
-   make vcpkg-status
-   
-   # Install alternative tools
-   sudo apt install wkhtmltopdf  # or weasyprint
-   ```
-
-### Build Flags
-
-- `HAVE_LIBHARU`: Enables native PDF generation
-- `DEBUG`: Enables debug symbols and verbose output
-- `NDEBUG`: Disables debug assertions (release builds)
-
-### Environment Variables
-
-- `VCPKG_ROOT`: Path to vcpkg installation
-- `VCPKG_TARGET_TRIPLET`: Target platform for vcpkg
-- `CC`: C compiler to use
-- `CFLAGS`: Additional compiler flags
-- `LDFLAGS`: Additional linker flags
-
-## Performance Comparison
-
-| Export Method | Speed | Dependencies | Quality |
-|---------------|-------|--------------|---------|
-| Native PDF (libHaru) | Fast | libHaru only | High |
-| wkhtmltopdf | Medium | External tool | Very High |
-| weasyprint | Slow | Python + deps | High |
-| HTML only | Very Fast | None | N/A |
-
-## Integration with Package Managers
-
-### Homebrew Formula (macOS)
-```ruby
-class Ciary < Formula
-  desc "Minimalistic TUI diary application"
-  homepage "https://github.com/git-akihakune/ciary"
-  url "https://github.com/git-akihakune/ciary/releases/latest"
-  
-  depends_on "ncurses"
-  depends_on "libharu"
-  
-  def install
-    system "make", "release"
-    bin.install "ciary"
-  end
-end
-```
-
-### AUR Package (Arch Linux)
+### "ncurses not found"
 ```bash
-# PKGBUILD example
-pkgname=ciary
-pkgver=1.0.0
-depends=('ncurses' 'libharu')
-makedepends=('gcc' 'make')
+# Ubuntu/Debian
+sudo apt install libncurses-dev
 
-build() {
-  cd "$srcdir/$pkgname-$pkgver"
-  make release
-}
+# macOS
+brew install ncurses
 
-package() {
-  cd "$srcdir/$pkgname-$pkgver"
-  install -Dm755 ciary "$pkgdir/usr/bin/ciary"
-}
+# FreeBSD  
+pkg install ncurses
 ```
 
-## Contributing
+### "PDF export unavailable"
+```bash
+# Check status
+make deps-status
 
-When building for development:
+# Install libharu (recommended)
+sudo apt install libharu-dev     # Ubuntu
+brew install libharu             # macOS
+pkg install libharu              # FreeBSD
+
+# Or install external tools
+sudo apt install wkhtmltopdf     # Ubuntu
+pip install weasyprint           # Any platform
+```
+
+### Build fails
+```bash
+# Make sure you have build tools
+sudo apt install build-essential pkg-config  # Ubuntu
+xcode-select --install                       # macOS
+pkg install gmake gcc pkgconf                # FreeBSD
+```
+
+## What Gets Built
+
+- `ciary`: Main executable
+- PDF support: Automatically enabled if libharu is detected
+- Export formats: HTML (always), Markdown (always), PDF (if available)
+
+Run `make deps-status` to see exactly what's available on your system.
+
+## Installation
 
 ```bash
-# Development build with all features
-make vcpkg-install
-make debug
+# Install to system
+sudo make install
 
-# Run tests
-make test-all
+# Remove from system  
+sudo make uninstall
 
-# Check code with different configurations
-make clean && make  # Without libHaru
-make clean && make vcpkg-install && make  # With libHaru
+# Or run directly
+./ciary
 ```
 
-For more information, see [CONTRIBUTING.md](CONTRIBUTING.md).
+The build process is intentionally simple - no complex dependency management needed!
