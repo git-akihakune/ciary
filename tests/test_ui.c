@@ -8,9 +8,7 @@
 static char mock_screen[50][100];
 static int mock_rows = 24;
 static int mock_cols = 80;
-static int mock_cursor_row = 0;
-static int mock_cursor_col = 0;
-static bool mock_ncurses_initialized = false;
+// Removed unused mock variables
 
 // Mock ncurses state
 typedef struct {
@@ -65,10 +63,8 @@ void test_calendar_display_format() {
     
     clear_mock_screen();
     
-    // Test month title display
-    app_state_t state;
-    state.current_date = (date_t){2024, 7, 15};
-    state.selected_date = (date_t){2024, 7, 15};
+    // Test month title display  
+    // Using specific date for testing
     
     // Simulate calendar title
     char title[64];
@@ -76,7 +72,7 @@ void test_calendar_display_format() {
     set_mock_text(2, (mock_cols - strlen(title)) / 2, title);
     
     char title_buffer[64];
-    get_mock_text(2, 30, 40, title_buffer);
+    get_mock_text(2, 25, 45, title_buffer);
     ASSERT_TRUE(strstr(title_buffer, "July") != NULL, "Month name should be displayed");
     ASSERT_TRUE(strstr(title_buffer, "2024") != NULL, "Year should be displayed");
     
@@ -102,7 +98,6 @@ void test_calendar_date_positioning() {
     clear_mock_screen();
     
     // Test July 2024 layout (starts on Monday)
-    date_t test_date = {2024, 7, 1};
     int first_day = day_of_week(2024, 7, 1); // Monday = 1
     int days_in_july = days_in_month(7, 2024); // 31 days
     
@@ -224,7 +219,6 @@ void test_keyboard_navigation() {
     state.selected_date = (date_t){2024, 7, 15};
     
     // Test arrow key navigation
-    date_t original_date = state.selected_date;
     
     // Simulate right arrow key
     if (state.selected_date.day < days_in_month(state.selected_date.month, state.selected_date.year)) {
@@ -261,7 +255,6 @@ void test_month_year_navigation() {
     state.selected_date = (date_t){2024, 7, 15};
     
     // Test month navigation
-    date_t original_date = state.selected_date;
     
     // Next month (simulate ']' key)
     if (state.current_date.month == 12) {
@@ -324,10 +317,7 @@ void test_status_bar_display() {
     
     clear_mock_screen();
     
-    // Test status bar content
-    app_state_t state;
-    state.current_date = (date_t){2024, 7, 15};
-    state.selected_date = (date_t){2024, 7, 15};
+    // Test status bar content with test date
     
     // Simulate status bar display
     char status_text[256];
@@ -483,8 +473,6 @@ void test_accessibility_features() {
     ASSERT_TRUE(true, "All functionality accessible via keyboard");
     
     // Test clear visual indicators
-    app_state_t state;
-    state.selected_date = (date_t){2024, 7, 15};
     
     bool is_selected = true; // Simulated highlighting
     ASSERT_TRUE(is_selected, "Selected date should have clear visual indication");

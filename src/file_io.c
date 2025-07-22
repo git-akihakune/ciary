@@ -34,8 +34,15 @@ int ensure_journal_dir(const config_t *config) {
 }
 
 char* get_entry_path(date_t date, char *path, const config_t *config) {
-    snprintf(path, MAX_PATH_SIZE, "%s/%04d-%02d-%02d.md",
-             config->journal_directory, date.year, date.month, date.day);
+    int result = snprintf(path, MAX_PATH_SIZE, "%s/%04d-%02d-%02d.md",
+                          config->journal_directory, date.year, date.month, date.day);
+    
+    // Check for truncation
+    if (result >= MAX_PATH_SIZE) {
+        // Path was truncated, return NULL to indicate error
+        return NULL;
+    }
+    
     return path;
 }
 
@@ -98,7 +105,7 @@ int open_entry_in_editor(date_t date, const config_t *config) {
     fclose(file);
     
     // Try different editors in order of preference
-    char command[MAX_PATH_SIZE + 50];
+    char command[1024];
     const char *editors[] = {"nvim", "vim", "nano", "emacs", "vi", NULL};
     
     // If user has a specific preference, try that first
@@ -173,7 +180,7 @@ int open_entry_with_time(date_t date, int hour, int minute, int second, const co
     fclose(file);
     
     // Try different editors in order of preference
-    char command[MAX_PATH_SIZE + 50];
+    char command[1024];
     const char *editors[] = {"nvim", "vim", "nano", "emacs", "vi", NULL};
     
     // If user has a specific preference, try that first
@@ -243,7 +250,7 @@ int view_entry(date_t date, const config_t *config) {
     }
     
     // Try different pagers in order of preference
-    char command[MAX_PATH_SIZE + 50];
+    char command[1024];
     const char *pagers[] = {"less", "more", "cat", NULL};
     
     // If user has a specific preference, try that first

@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include "test_framework.h"
 #include "../include/ciary.h"
 #include <unistd.h>
