@@ -76,7 +76,7 @@ void draw_calendar(app_state_t *state) {
         }
     
     // Draw instructions
-    mvprintw(rows - 3, 2, "Arrow keys: Navigate  Enter/n: New entry  v: View  h: Help  q: Quit");
+    mvprintw(rows - 3, 2, "Arrows: Navigate  [/]: Month  </>/,/.: Year  Enter/n: New  v: View  h: Help  q: Quit");
     
     draw_status_bar(state);
     refresh();
@@ -131,6 +131,74 @@ void handle_calendar_input(app_state_t *state, int ch) {
                 int days = days_in_month(state->selected_date.month, state->selected_date.year);
                 if (state->selected_date.day + 7 <= days) {
                     state->selected_date.day += 7;
+                }
+            }
+            break;
+            
+        case '[':
+        case KEY_PPAGE: // Page Up
+            // Previous month
+            {
+                if (state->current_date.month == 1) {
+                    state->current_date.month = 12;
+                    state->current_date.year--;
+                } else {
+                    state->current_date.month--;
+                }
+                // Adjust selected day if it doesn't exist in the new month
+                int max_days = days_in_month(state->current_date.month, state->current_date.year);
+                if (state->selected_date.day > max_days) {
+                    state->selected_date.day = max_days;
+                }
+                state->selected_date.month = state->current_date.month;
+                state->selected_date.year = state->current_date.year;
+            }
+            break;
+            
+        case ']':
+        case KEY_NPAGE: // Page Down
+            // Next month
+            {
+                if (state->current_date.month == 12) {
+                    state->current_date.month = 1;
+                    state->current_date.year++;
+                } else {
+                    state->current_date.month++;
+                }
+                // Adjust selected day if it doesn't exist in the new month
+                int max_days = days_in_month(state->current_date.month, state->current_date.year);
+                if (state->selected_date.day > max_days) {
+                    state->selected_date.day = max_days;
+                }
+                state->selected_date.month = state->current_date.month;
+                state->selected_date.year = state->current_date.year;
+            }
+            break;
+            
+        case '<':
+        case ',':
+            // Previous year
+            {
+                state->current_date.year--;
+                state->selected_date.year = state->current_date.year;
+                // Handle leap year edge case for Feb 29
+                int max_days = days_in_month(state->current_date.month, state->current_date.year);
+                if (state->selected_date.day > max_days) {
+                    state->selected_date.day = max_days;
+                }
+            }
+            break;
+            
+        case '>':
+        case '.':
+            // Next year
+            {
+                state->current_date.year++;
+                state->selected_date.year = state->current_date.year;
+                // Handle leap year edge case for Feb 29
+                int max_days = days_in_month(state->current_date.month, state->current_date.year);
+                if (state->selected_date.day > max_days) {
+                    state->selected_date.day = max_days;
                 }
             }
             break;

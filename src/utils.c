@@ -71,25 +71,29 @@ void draw_help(void) {
     
     mvprintw(2, 2, "CIARY - TUI Diary Help");
     mvprintw(4, 2, "Calendar Navigation:");
-    mvprintw(5, 4, "Arrow keys    - Navigate dates");
-    mvprintw(6, 4, "Enter or n    - Create new entry");
-    mvprintw(7, 4, "                (current time for today, custom time for other dates)");
-    mvprintw(8, 4, "v             - View existing entries (read-only)");
-    mvprintw(9, 4, "h             - Show this help");
-    mvprintw(10, 4, "q             - Quit application");
+    mvprintw(5, 4, "Arrow keys    - Navigate dates within month");
+    mvprintw(6, 4, "[ / Page Up   - Previous month");
+    mvprintw(7, 4, "] / Page Down - Next month");
+    mvprintw(8, 4, "< / ,         - Previous year");
+    mvprintw(9, 4, "> / .         - Next year");
+    mvprintw(10, 4, "Enter or n    - Create new entry");
+    mvprintw(11, 4, "                (current time for today, custom time for other dates)");
+    mvprintw(12, 4, "v             - View existing entries (read-only)");
+    mvprintw(13, 4, "h             - Show this help");
+    mvprintw(14, 4, "q             - Quit application");
     
-    mvprintw(12, 2, "Entry Format:");
-    mvprintw(13, 4, "- One file per day with time-based sections");
-    mvprintw(14, 4, "- Format: ## HH:MM:SS followed by entry content");
-    mvprintw(15, 4, "- Today: Automatic current time");
-    mvprintw(16, 4, "- Other dates: Prompted for specific time");
-    mvprintw(17, 4, "- Dates with entries are shown in bold");
+    mvprintw(16, 2, "Entry Format:");
+    mvprintw(17, 4, "- One file per day with time-based sections");
+    mvprintw(18, 4, "- Format: ## HH:MM:SS followed by entry content");
+    mvprintw(19, 4, "- Today: Automatic current time");
+    mvprintw(20, 4, "- Other dates: Prompted for specific time");
+    mvprintw(21, 4, "- Dates with entries are shown in bold");
     
-    mvprintw(19, 2, "External Tools:");
-    mvprintw(20, 4, "- Editors: nvim, vim, nano, emacs, vi (first available)");
-    mvprintw(21, 4, "- Viewers: less, more, cat (first available)");
+    mvprintw(23, 2, "External Tools:");
+    mvprintw(24, 4, "- Editors: nvim, vim, nano, emacs, vi (first available)");
+    mvprintw(25, 4, "- Viewers: less, more, cat (first available)");
     
-    mvprintw(23, 2, "Press any key to return...");
+    mvprintw(27, 2, "Press any key to return...");
     refresh();
     getch();
 }
