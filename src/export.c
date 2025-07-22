@@ -213,12 +213,26 @@ int show_export_dialog(app_state_t *state, export_options_t *options) {
     return (input[0] == 'y' || input[0] == 'Y');
 }
 
-// Collect all entry files in the specified date range
+// Helper structure for sorting entries by date
+typedef struct {
+    char *filename;
+    date_t date;
+} entry_file_t;
+
+// Comparison function for qsort to sort entries chronologically
+int compare_entry_files(const void *a, const void *b) {
+    const entry_file_t *entry_a = (const entry_file_t *)a;
+    const entry_file_t *entry_b = (const entry_file_t *)b;
+    
+    return date_compare(entry_a->date, entry_b->date);
+}
+
+// Collect all entry files in the specified date range (sorted chronologically)
 int collect_entries_in_range(const export_options_t *options, const config_t *config, 
                            char ***entry_files, int *file_count) {
     DIR *dir;
     struct dirent *entry;
-    char *files[1000];  // Reasonable limit
+    entry_file_t entries[1000];  // Reasonable limit
     int count = 0;
     
     dir = opendir(config->journal_directory);
@@ -226,6 +240,7 @@ int collect_entries_in_range(const export_options_t *options, const config_t *co
         return 0;
     }
     
+    // Collect all valid entries with their dates
     while ((entry = readdir(dir)) != NULL && count < 1000) {
         // Check if it's a .md file with date format YYYY-MM-DD.md
         if (strstr(entry->d_name, ".md") && strlen(entry->d_name) == 13) {
@@ -238,14 +253,15 @@ int collect_entries_in_range(const export_options_t *options, const config_t *co
                     date_compare(file_date, options->end_date) <= 0) {
                     
                     // Allocate memory for filename
-                    files[count] = malloc(MAX_PATH_SIZE);
-                    if (files[count]) {
-                        int result = snprintf(files[count], MAX_PATH_SIZE, "%s/%s", 
+                    entries[count].filename = malloc(MAX_PATH_SIZE);
+                    if (entries[count].filename) {
+                        int result = snprintf(entries[count].filename, MAX_PATH_SIZE, "%s/%s", 
                                 config->journal_directory, entry->d_name);
                         if (result > 0 && result < MAX_PATH_SIZE) {
+                            entries[count].date = file_date;
                             count++;
                         } else {
-                            free(files[count]);
+                            free(entries[count].filename);
                         }
                     }
                 }
@@ -255,19 +271,28 @@ int collect_entries_in_range(const export_options_t *options, const config_t *co
     
     closedir(dir);
     
+    if (count == 0) {
+        *entry_files = NULL;
+        *file_count = 0;
+        return 1;
+    }
+    
+    // Sort entries chronologically
+    qsort(entries, count, sizeof(entry_file_t), compare_entry_files);
+    
     // Allocate array for return
     *entry_files = malloc(count * sizeof(char*));
     if (!*entry_files) {
         // Free allocated memory on failure
         for (int i = 0; i < count; i++) {
-            free(files[i]);
+            free(entries[i].filename);
         }
         return 0;
     }
     
-    // Copy file pointers
+    // Copy sorted file pointers
     for (int i = 0; i < count; i++) {
-        (*entry_files)[i] = files[i];
+        (*entry_files)[i] = entries[i].filename;
     }
     
     *file_count = count;
