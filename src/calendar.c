@@ -140,12 +140,12 @@ void handle_calendar_input(app_state_t *state, int ch) {
         case KEY_ENTER:
         case 'n':
             // Open entry in external editor
-            open_entry_in_editor(state->selected_date);
+            open_entry_in_editor(state->selected_date, &state->config);
             break;
             
         case 'v':
             // View entry in read-only mode
-            view_entry(state->selected_date);
+            view_entry(state->selected_date, &state->config);
             break;
     }
 }

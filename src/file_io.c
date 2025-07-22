@@ -55,7 +55,7 @@ int count_entries(date_t date) {
     return count;
 }
 
-int open_entry_in_editor(date_t date) {
+int open_entry_in_editor(date_t date, const config_t *config) {
     if (ensure_ciary_dir() == -1) return -1;
     
     char path[MAX_PATH_SIZE];
@@ -88,6 +88,26 @@ int open_entry_in_editor(date_t date) {
     char command[MAX_PATH_SIZE + 50];
     const char *editors[] = {"nvim", "vim", "nano", "emacs", "vi", NULL};
     
+    // If user has a specific preference, try that first
+    if (strcmp(config->editor_preference, "auto") != 0) {
+        snprintf(command, sizeof(command), "which %s >/dev/null 2>&1", config->editor_preference);
+        if (system(command) == 0) {
+            snprintf(command, sizeof(command), "%s \"%s\"", config->editor_preference, path);
+            
+            endwin();
+            int result = system(command);
+            
+            initscr();
+            cbreak();
+            noecho();
+            keypad(stdscr, TRUE);
+            curs_set(1);
+            
+            return (result == 0) ? 0 : -1;
+        }
+    }
+    
+    // Fall back to auto-detection
     for (int i = 0; editors[i] != NULL; i++) {
         // Check if editor exists
         snprintf(command, sizeof(command), "which %s >/dev/null 2>&1", editors[i]);
@@ -113,7 +133,7 @@ int open_entry_in_editor(date_t date) {
     return -1; // No suitable editor found
 }
 
-int view_entry(date_t date) {
+int view_entry(date_t date, const config_t *config) {
     char path[MAX_PATH_SIZE];
     if (!get_entry_path(date, path)) return -1;
     
@@ -138,6 +158,30 @@ int view_entry(date_t date) {
     char command[MAX_PATH_SIZE + 50];
     const char *pagers[] = {"less", "more", "cat", NULL};
     
+    // If user has a specific preference, try that first
+    if (strcmp(config->viewer_preference, "auto") != 0) {
+        snprintf(command, sizeof(command), "which %s >/dev/null 2>&1", config->viewer_preference);
+        if (system(command) == 0) {
+            if (strcmp(config->viewer_preference, "cat") == 0) {
+                snprintf(command, sizeof(command), "%s \"%s\" && echo \"\\nPress Enter to continue...\" && read", config->viewer_preference, path);
+            } else {
+                snprintf(command, sizeof(command), "%s \"%s\"", config->viewer_preference, path);
+            }
+            
+            endwin();
+            int result = system(command);
+            
+            initscr();
+            cbreak();
+            noecho();
+            keypad(stdscr, TRUE);
+            curs_set(1);
+            
+            return (result == 0) ? 0 : -1;
+        }
+    }
+    
+    // Fall back to auto-detection
     for (int i = 0; pagers[i] != NULL; i++) {
         // Check if pager exists
         snprintf(command, sizeof(command), "which %s >/dev/null 2>&1", pagers[i]);

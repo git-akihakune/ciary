@@ -122,13 +122,9 @@ void draw_status_bar(app_state_t *state) {
 }
 
 // Welcome message system with personality
-char* get_username(void) {
-    static char username[64];
-    char *user = getenv("USER");
-    if (!user) user = getenv("USERNAME");
-    if (!user) user = "friend";
-    
-    strncpy(username, user, sizeof(username) - 1);
+char* get_username(const config_t *config) {
+    static char username[MAX_NAME_SIZE];
+    strncpy(username, config->preferred_name, sizeof(username) - 1);
     username[sizeof(username) - 1] = '\0';
     return username;
 }
@@ -208,8 +204,8 @@ char* get_day_phase(void) {
     else return "in the evening's peaceful embrace";
 }
 
-void generate_welcome_message(char *message, size_t size) {
-    char *username = get_username();
+void generate_welcome_message(char *message, size_t size, const config_t *config) {
+    char *username = get_username(config);
     char *time_greeting = get_time_greeting();
     char *season_info = get_season_info();
     char *day_phase = get_day_phase();
@@ -282,9 +278,24 @@ void generate_welcome_message(char *message, size_t size) {
     }
 }
 
-void show_personalized_welcome(void) {
+void show_personalized_welcome(const config_t *config) {
     char welcome_message[512];
-    generate_welcome_message(welcome_message, sizeof(welcome_message));
+    
+    // Check if personalization is enabled
+    if (!config->enable_personalization) {
+        clear();
+        int rows, cols;
+        getmaxyx(stdscr, rows, cols);
+        const char *simple_msg = "Welcome to Ciary!";
+        mvprintw(rows / 2, (cols - strlen(simple_msg)) / 2, "%s", simple_msg);
+        const char *prompt = "Press any key to continue...";
+        mvprintw(rows / 2 + 2, (cols - strlen(prompt)) / 2, "%s", prompt);
+        refresh();
+        getch();
+        return;
+    }
+    
+    generate_welcome_message(welcome_message, sizeof(welcome_message), config);
     
     clear();
     
@@ -292,27 +303,40 @@ void show_personalized_welcome(void) {
     int rows, cols;
     getmaxyx(stdscr, rows, cols);
     
-    // ASCII art title (simple but elegant)
-    const char *title[] = {
-        "  _____ _                   ",
-        " / ____(_)                  ",
-        "| |     _  __ _ _ __ _   _   ",
-        "| |    | |/ _` | '__| | | |  ",
-        "| |____| | (_| | |  | |_| |  ",
-        " \\_____|_|\\__,_|_|   \\__, | ",
-        "                     __/ |  ",
-        "                    |___/   "
-    };
+    int title_height = 0;
+    int start_row;
     
-    int title_height = sizeof(title) / sizeof(title[0]);
-    int start_row = (rows - title_height - 6) / 2;
-    
-    // Draw title
-    attron(A_BOLD);
-    for (int i = 0; i < title_height; i++) {
-        mvprintw(start_row + i, (cols - strlen(title[i])) / 2, "%s", title[i]);
+    // Show ASCII art if enabled
+    if (config->show_ascii_art) {
+        const char *title[] = {
+            "  _____ _                   ",
+            " / ____(_)                  ",
+            "| |     _  __ _ _ __ _   _   ",
+            "| |    | |/ _` | '__| | | |  ",
+            "| |____| | (_| | |  | |_| |  ",
+            " \\_____|_|\\__,_|_|   \\__, | ",
+            "                     __/ |  ",
+            "                    |___/   "
+        };
+        
+        title_height = sizeof(title) / sizeof(title[0]);
+        start_row = (rows - title_height - 6) / 2;
+        
+        // Draw title
+        attron(A_BOLD);
+        for (int i = 0; i < title_height; i++) {
+            mvprintw(start_row + i, (cols - strlen(title[i])) / 2, "%s", title[i]);
+        }
+        attroff(A_BOLD);
+    } else {
+        // Simple text title
+        start_row = (rows - 4) / 2;
+        const char *simple_title = "Ciary";
+        attron(A_BOLD);
+        mvprintw(start_row, (cols - strlen(simple_title)) / 2, "%s", simple_title);
+        attroff(A_BOLD);
+        title_height = 1;
     }
-    attroff(A_BOLD);
     
     // Draw welcome message (wrapped if necessary)
     int message_row = start_row + title_height + 2;
@@ -367,8 +391,13 @@ void show_personalized_welcome(void) {
     getch();
 }
 
-void show_personalized_goodbye(void) {
-    char *username = get_username();
+void show_personalized_goodbye(const config_t *config) {
+    if (!config->enable_personalization) {
+        printf("Thank you for using Ciary!\n");
+        return;
+    }
+    
+    char *username = get_username(config);
     time_t now = time(NULL);
     struct tm *tm = localtime(&now);
     int hour = tm->tm_hour;

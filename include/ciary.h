@@ -13,7 +13,9 @@
 #define MAX_CONTENT_SIZE 8192
 #define MAX_PATH_SIZE 512
 #define MAX_LINE_SIZE 256
+#define MAX_NAME_SIZE 64
 #define CIARY_DIR ".ciary"
+#define CONFIG_FILE "config.conf"
 
 // Removed view modes - only month view now
 
@@ -29,9 +31,18 @@ typedef struct {
 } date_t;
 
 typedef struct {
+    char preferred_name[MAX_NAME_SIZE];
+    char editor_preference[MAX_NAME_SIZE];
+    char viewer_preference[MAX_NAME_SIZE];
+    int show_ascii_art;
+    int enable_personalization;
+} config_t;
+
+typedef struct {
     app_mode_t mode;
     date_t current_date;
     date_t selected_date;
+    config_t config;
 } app_state_t;
 
 // Function declarations
@@ -51,8 +62,8 @@ int ensure_ciary_dir(void);
 char* get_entry_path(date_t date, char *path);
 int entry_exists(date_t date);
 int count_entries(date_t date);
-int open_entry_in_editor(date_t date);
-int view_entry(date_t date);
+int open_entry_in_editor(date_t date, const config_t *config);
+int view_entry(date_t date, const config_t *config);
 
 // Utility functions
 date_t get_current_date(void);
@@ -61,13 +72,21 @@ int date_compare(date_t a, date_t b);
 void draw_help(void);
 void draw_status_bar(app_state_t *state);
 
+// Config functions
+int ensure_config_dir(void);
+char* get_config_path(char *path);
+void load_default_config(config_t *config);
+int load_config(config_t *config);
+int save_config(const config_t *config);
+int setup_first_run(config_t *config);
+
 // Welcome message functions
-char* get_username(void);
+char* get_username(const config_t *config);
 char* get_time_greeting(void);
 char* get_season_info(void);
 char* get_day_phase(void);
-void generate_welcome_message(char *message, size_t size);
-void show_personalized_welcome(void);
-void show_personalized_goodbye(void);
+void generate_welcome_message(char *message, size_t size, const config_t *config);
+void show_personalized_welcome(const config_t *config);
+void show_personalized_goodbye(const config_t *config);
 
 #endif

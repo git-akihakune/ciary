@@ -1,13 +1,6 @@
 #include "ciary.h"
 
 void init_app(app_state_t *state) {
-    // Initialize ncurses
-    initscr();
-    cbreak();
-    noecho();
-    keypad(stdscr, TRUE);
-    curs_set(1);
-    
     // Initialize application state
     state->mode = MODE_CALENDAR;
     state->current_date = get_current_date();
@@ -15,6 +8,16 @@ void init_app(app_state_t *state) {
     
     // Ensure ciary directory exists
     ensure_ciary_dir();
+    
+    // Load configuration (handles first-run setup) - before ncurses
+    setup_first_run(&state->config);
+    
+    // Initialize ncurses after config setup
+    initscr();
+    cbreak();
+    noecho();
+    keypad(stdscr, TRUE);
+    curs_set(1);
 }
 
 void cleanup_app(void) {
@@ -66,12 +69,12 @@ int main(int argc, char *argv[]) {
     init_app(&state);
     
     // Show personalized welcome message
-    show_personalized_welcome();
+    show_personalized_welcome(&state.config);
     
     run_app(&state);
     
     cleanup_app();
     
-    show_personalized_goodbye();
+    show_personalized_goodbye(&state.config);
     return 0;
 }
