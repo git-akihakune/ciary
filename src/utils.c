@@ -79,21 +79,26 @@ void draw_help(void) {
     mvprintw(10, 4, "Enter or n    - Create new entry");
     mvprintw(11, 4, "                (current time for today, custom time for other dates)");
     mvprintw(12, 4, "v             - View existing entries (read-only)");
-    mvprintw(13, 4, "h             - Show this help");
-    mvprintw(14, 4, "q             - Quit application");
+    mvprintw(13, 4, "e             - Export entries to HTML/PDF/Markdown");
+    mvprintw(14, 4, "h             - Show this help");
+    mvprintw(15, 4, "q             - Quit application");
     
-    mvprintw(16, 2, "Entry Format:");
-    mvprintw(17, 4, "- One file per day with time-based sections");
-    mvprintw(18, 4, "- Format: ## HH:MM:SS followed by entry content");
-    mvprintw(19, 4, "- Today: Automatic current time");
-    mvprintw(20, 4, "- Other dates: Prompted for specific time");
-    mvprintw(21, 4, "- Dates with entries are shown in bold");
+    mvprintw(17, 2, "Entry Format:");
+    mvprintw(18, 4, "- One file per day with time-based sections");
+    mvprintw(19, 4, "- Format: ## HH:MM:SS followed by entry content");
+    mvprintw(20, 4, "- Today: Automatic current time");
+    mvprintw(21, 4, "- Other dates: Prompted for specific time");
+    mvprintw(22, 4, "- Dates with entries are shown in bold");
     
-    mvprintw(23, 2, "External Tools:");
-    mvprintw(24, 4, "- Editors: nvim, vim, nano, emacs, vi (first available)");
-    mvprintw(25, 4, "- Viewers: less, more, cat (first available)");
+    mvprintw(24, 2, "Export Options:");
+    mvprintw(25, 4, "- Date ranges: All, Last 7 days, This month/year, Custom");
+    mvprintw(26, 4, "- Formats: HTML (styled), PDF (requires wkhtmltopdf), Markdown");
     
-    mvprintw(27, 2, "Press any key to return...");
+    mvprintw(28, 2, "External Tools:");
+    mvprintw(29, 4, "- Editors: nvim, vim, nano, emacs, vi (first available)");
+    mvprintw(30, 4, "- Viewers: less, more, cat (first available)");
+    
+    mvprintw(32, 2, "Press any key to return...");
     refresh();
     getch();
 }

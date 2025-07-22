@@ -40,6 +40,28 @@ typedef struct {
     int enable_personalization;
 } config_t;
 
+typedef enum {
+    EXPORT_FORMAT_HTML,
+    EXPORT_FORMAT_PDF,
+    EXPORT_FORMAT_MARKDOWN
+} export_format_t;
+
+typedef enum {
+    DATE_RANGE_ALL,
+    DATE_RANGE_LAST_7_DAYS,
+    DATE_RANGE_THIS_MONTH,
+    DATE_RANGE_THIS_YEAR,
+    DATE_RANGE_CUSTOM
+} date_range_preset_t;
+
+typedef struct {
+    date_t start_date;
+    date_t end_date;
+    export_format_t format;
+    char output_path[MAX_PATH_SIZE];
+    int include_empty_days;
+} export_options_t;
+
 typedef struct {
     app_mode_t mode;
     date_t current_date;
@@ -94,5 +116,15 @@ char* get_day_phase(void);
 void generate_welcome_message(char *message, size_t size, const config_t *config);
 void show_personalized_welcome(const config_t *config);
 void show_personalized_goodbye(const config_t *config);
+
+// Export functions
+int show_export_dialog(app_state_t *state, export_options_t *options);
+int export_entries(const export_options_t *options, const config_t *config);
+int collect_entries_in_range(const export_options_t *options, const config_t *config, char ***entry_files, int *file_count);
+int export_to_html(const export_options_t *options, const config_t *config, char **entry_files, int file_count);
+int export_to_pdf(const export_options_t *options, const config_t *config, char **entry_files, int file_count);
+int export_to_markdown(const export_options_t *options, const config_t *config, char **entry_files, int file_count);
+void show_progress_bar(const char *message, int current, int total);
+void calculate_date_range(date_range_preset_t preset, date_t current_date, date_t *start, date_t *end);
 
 #endif
