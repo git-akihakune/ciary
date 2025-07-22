@@ -72,22 +72,24 @@ void draw_help(void) {
     mvprintw(2, 2, "CIARY - TUI Diary Help");
     mvprintw(4, 2, "Calendar Navigation:");
     mvprintw(5, 4, "Arrow keys    - Navigate dates");
-    mvprintw(6, 4, "Enter or n    - Create new entry (opens external editor)");
-    mvprintw(7, 4, "v             - View existing entries (read-only)");
-    mvprintw(8, 4, "h             - Show this help");
-    mvprintw(9, 4, "q             - Quit application");
+    mvprintw(6, 4, "Enter or n    - Create new entry");
+    mvprintw(7, 4, "                (current time for today, custom time for other dates)");
+    mvprintw(8, 4, "v             - View existing entries (read-only)");
+    mvprintw(9, 4, "h             - Show this help");
+    mvprintw(10, 4, "q             - Quit application");
     
-    mvprintw(11, 2, "Entry Format:");
-    mvprintw(12, 4, "- One file per day: ~/.ciary/YYYY-MM-DD.md");
-    mvprintw(13, 4, "- Multiple entries per day with time headers");
+    mvprintw(12, 2, "Entry Format:");
+    mvprintw(13, 4, "- One file per day with time-based sections");
     mvprintw(14, 4, "- Format: ## HH:MM:SS followed by entry content");
-    mvprintw(15, 4, "- Dates with entries are shown in bold");
+    mvprintw(15, 4, "- Today: Automatic current time");
+    mvprintw(16, 4, "- Other dates: Prompted for specific time");
+    mvprintw(17, 4, "- Dates with entries are shown in bold");
     
-    mvprintw(17, 2, "External Tools:");
-    mvprintw(18, 4, "- Editors: nvim, vim, nano, emacs, vi (first available)");
-    mvprintw(19, 4, "- Viewers: less, more, cat (first available)");
+    mvprintw(19, 2, "External Tools:");
+    mvprintw(20, 4, "- Editors: nvim, vim, nano, emacs, vi (first available)");
+    mvprintw(21, 4, "- Viewers: less, more, cat (first available)");
     
-    mvprintw(21, 2, "Press any key to return...");
+    mvprintw(23, 2, "Press any key to return...");
     refresh();
     getch();
 }
@@ -441,4 +443,72 @@ void show_personalized_goodbye(const config_t *config) {
     }
     
     printf("%s\n", goodbye_msg);
+}
+
+int is_today(date_t date) {
+    date_t today = get_current_date();
+    return (date.year == today.year && 
+            date.month == today.month && 
+            date.day == today.day);
+}
+
+int prompt_for_time(int *hour, int *minute, int *second) {
+    char input[32];
+    int h = 0, m = 0, s = 0;
+    
+    endwin(); // Exit ncurses mode for input
+    
+    printf("Enter the time for this entry (HH:MM:SS or HH:MM): ");
+    fflush(stdout);
+    
+    if (fgets(input, sizeof(input), stdin)) {
+        input[strcspn(input, "\n")] = '\0'; // Remove newline
+        
+        // Try to parse HH:MM:SS format
+        int parsed = sscanf(input, "%d:%d:%d", &h, &m, &s);
+        
+        if (parsed < 2) {
+            // Try to parse HH:MM format (seconds default to 0)
+            parsed = sscanf(input, "%d:%d", &h, &m);
+            s = 0;
+        }
+        
+        if (parsed >= 2) {
+            // Validate time values
+            if (h >= 0 && h <= 23 && m >= 0 && m <= 59 && s >= 0 && s <= 59) {
+                *hour = h;
+                *minute = m;
+                *second = s;
+                
+                // Reinitialize ncurses
+                initscr();
+                cbreak();
+                noecho();
+                keypad(stdscr, TRUE);
+                curs_set(1);
+                
+                return 0;
+            }
+        }
+    }
+    
+    // Invalid input - use current time as fallback
+    time_t now = time(NULL);
+    struct tm *tm = localtime(&now);
+    *hour = tm->tm_hour;
+    *minute = tm->tm_min;
+    *second = tm->tm_sec;
+    
+    printf("Invalid time format. Using current time: %02d:%02d:%02d\n", *hour, *minute, *second);
+    printf("Press Enter to continue...");
+    getchar();
+    
+    // Reinitialize ncurses
+    initscr();
+    cbreak();
+    noecho();
+    keypad(stdscr, TRUE);
+    curs_set(1);
+    
+    return 0;
 }

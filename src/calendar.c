@@ -139,8 +139,17 @@ void handle_calendar_input(app_state_t *state, int ch) {
         case '\r':
         case KEY_ENTER:
         case 'n':
-            // Open entry in external editor
-            open_entry_in_editor(state->selected_date, &state->config);
+            // Open entry in external editor with appropriate time handling
+            if (is_today(state->selected_date)) {
+                // Today - use current time
+                open_entry_in_editor(state->selected_date, &state->config);
+            } else {
+                // Other day - ask for time
+                int hour, minute, second;
+                if (prompt_for_time(&hour, &minute, &second) == 0) {
+                    open_entry_with_time(state->selected_date, hour, minute, second, &state->config);
+                }
+            }
             break;
             
         case 'v':

@@ -146,6 +146,81 @@ int open_entry_in_editor(date_t date, const config_t *config) {
     return -1; // No suitable editor found
 }
 
+int open_entry_with_time(date_t date, int hour, int minute, int second, const config_t *config) {
+    if (ensure_journal_dir(config) == -1) return -1;
+    
+    char path[MAX_PATH_SIZE];
+    if (!get_entry_path(date, path, config)) return -1;
+    
+    // Add new entry with specified time
+    FILE *file = fopen(path, "a");
+    if (!file) return -1;
+    
+    // Check if file is empty (new file)
+    fseek(file, 0, SEEK_END);
+    long size = ftell(file);
+    
+    if (size == 0) {
+        // New file, add date header
+        fprintf(file, "# %04d-%02d-%02d\n\n", date.year, date.month, date.day);
+    } else {
+        // Existing file, add some spacing
+        fprintf(file, "\n");
+    }
+    
+    // Add time header for new entry with specified time
+    fprintf(file, "## %02d:%02d:%02d\n\n", hour, minute, second);
+    fclose(file);
+    
+    // Try different editors in order of preference
+    char command[MAX_PATH_SIZE + 50];
+    const char *editors[] = {"nvim", "vim", "nano", "emacs", "vi", NULL};
+    
+    // If user has a specific preference, try that first
+    if (strcmp(config->editor_preference, "auto") != 0) {
+        snprintf(command, sizeof(command), "which %s >/dev/null 2>&1", config->editor_preference);
+        if (system(command) == 0) {
+            snprintf(command, sizeof(command), "%s \"%s\"", config->editor_preference, path);
+            
+            endwin();
+            int result = system(command);
+            
+            initscr();
+            cbreak();
+            noecho();
+            keypad(stdscr, TRUE);
+            curs_set(1);
+            
+            return (result == 0) ? 0 : -1;
+        }
+    }
+    
+    // Fall back to auto-detection
+    for (int i = 0; editors[i] != NULL; i++) {
+        // Check if editor exists
+        snprintf(command, sizeof(command), "which %s >/dev/null 2>&1", editors[i]);
+        if (system(command) == 0) {
+            // Editor found, use it
+            snprintf(command, sizeof(command), "%s \"%s\"", editors[i], path);
+            
+            // Temporarily restore terminal settings
+            endwin();
+            int result = system(command);
+            
+            // Reinitialize ncurses
+            initscr();
+            cbreak();
+            noecho();
+            keypad(stdscr, TRUE);
+            curs_set(1);
+            
+            return (result == 0) ? 0 : -1;
+        }
+    }
+    
+    return -1; // No suitable editor found
+}
+
 int view_entry(date_t date, const config_t *config) {
     char path[MAX_PATH_SIZE];
     if (!get_entry_path(date, path, config)) return -1;

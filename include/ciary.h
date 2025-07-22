@@ -65,7 +65,10 @@ char* get_entry_path(date_t date, char *path, const config_t *config);
 int entry_exists(date_t date, const config_t *config);
 int count_entries(date_t date, const config_t *config);
 int open_entry_in_editor(date_t date, const config_t *config);
+int open_entry_with_time(date_t date, int hour, int minute, int second, const config_t *config);
 int view_entry(date_t date, const config_t *config);
+int prompt_for_time(int *hour, int *minute, int *second);
+int is_today(date_t date);
 
 // Utility functions
 date_t get_current_date(void);
