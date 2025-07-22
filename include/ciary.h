@@ -11,7 +11,7 @@
 #include <errno.h>
 
 #define MAX_CONTENT_SIZE 8192
-#define MAX_PATH_SIZE 512
+#define MAX_PATH_SIZE 1024
 #define MAX_LINE_SIZE 256
 #define MAX_NAME_SIZE 64
 #define CIARY_CONFIG_DIR ".config/ciary"

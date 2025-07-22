@@ -240,9 +240,13 @@ int collect_entries_in_range(const export_options_t *options, const config_t *co
                     // Allocate memory for filename
                     files[count] = malloc(MAX_PATH_SIZE);
                     if (files[count]) {
-                        snprintf(files[count], MAX_PATH_SIZE, "%s/%s", 
+                        int result = snprintf(files[count], MAX_PATH_SIZE, "%s/%s", 
                                 config->journal_directory, entry->d_name);
-                        count++;
+                        if (result > 0 && result < MAX_PATH_SIZE) {
+                            count++;
+                        } else {
+                            free(files[count]);
+                        }
                     }
                 }
             }
@@ -273,6 +277,7 @@ int collect_entries_in_range(const export_options_t *options, const config_t *co
 // Export entries to HTML format
 int export_to_html(const export_options_t *options, const config_t *config, 
                   char **entry_files, int file_count) {
+    (void)config;  // Suppress unused parameter warning
     char output_file[MAX_PATH_SIZE];
     FILE *output;
     FILE *input;
@@ -280,10 +285,14 @@ int export_to_html(const export_options_t *options, const config_t *config,
     char title[256];
     
     // Create output filename
-    snprintf(output_file, MAX_PATH_SIZE, "%s/ciary_export_%d-%02d-%02d_to_%d-%02d-%02d.html",
+    int result = snprintf(output_file, MAX_PATH_SIZE, "%s/ciary_export_%d-%02d-%02d_to_%d-%02d-%02d.html",
              options->output_path,
              options->start_date.year, options->start_date.month, options->start_date.day,
              options->end_date.year, options->end_date.month, options->end_date.day);
+    
+    if (result >= MAX_PATH_SIZE) {
+        return 0; // Path too long
+    }
     
     output = fopen(output_file, "w");
     if (!output) {
@@ -415,10 +424,14 @@ int export_to_pdf_native(const export_options_t *options, const config_t *config
     const float content_width = page_width - (margin * 2);
     
     // Create output filename
-    snprintf(output_file, MAX_PATH_SIZE, "%s/ciary_export_%d-%02d-%02d_to_%d-%02d-%02d.pdf",
+    int result = snprintf(output_file, MAX_PATH_SIZE, "%s/ciary_export_%d-%02d-%02d_to_%d-%02d-%02d.pdf",
              options->output_path,
              options->start_date.year, options->start_date.month, options->start_date.day,
              options->end_date.year, options->end_date.month, options->end_date.day);
+    
+    if (result >= MAX_PATH_SIZE) {
+        return 0; // Path too long
+    }
     
     // Create PDF document
     pdf = HPDF_New(error_handler, NULL);
@@ -616,7 +629,7 @@ int export_to_pdf(const export_options_t *options, const config_t *config,
     // Fallback to external tools
     char html_file[MAX_PATH_SIZE];
     char pdf_file[MAX_PATH_SIZE];
-    char command[MAX_PATH_SIZE * 2];
+    char command[MAX_PATH_SIZE * 3];  // Space for command + two file paths
     int ext_result;
     
     // First create HTML file
@@ -625,30 +638,36 @@ int export_to_pdf(const export_options_t *options, const config_t *config,
     }
     
     // Generate filenames
-    snprintf(html_file, MAX_PATH_SIZE, "%s/ciary_export_%d-%02d-%02d_to_%d-%02d-%02d.html",
+    int html_result = snprintf(html_file, MAX_PATH_SIZE, "%s/ciary_export_%d-%02d-%02d_to_%d-%02d-%02d.html",
              options->output_path,
              options->start_date.year, options->start_date.month, options->start_date.day,
              options->end_date.year, options->end_date.month, options->end_date.day);
     
-    snprintf(pdf_file, MAX_PATH_SIZE, "%s/ciary_export_%d-%02d-%02d_to_%d-%02d-%02d.pdf",
+    int pdf_result = snprintf(pdf_file, MAX_PATH_SIZE, "%s/ciary_export_%d-%02d-%02d_to_%d-%02d-%02d.pdf",
              options->output_path,
              options->start_date.year, options->start_date.month, options->start_date.day,
              options->end_date.year, options->end_date.month, options->end_date.day);
+    
+    if (html_result >= MAX_PATH_SIZE || pdf_result >= MAX_PATH_SIZE) {
+        return 0; // Path too long
+    }
     
     // Try wkhtmltopdf first, then weasyprint as fallback
-    snprintf(command, sizeof(command), "which wkhtmltopdf > /dev/null 2>&1");
-    if (system(command) == 0) {
-        snprintf(command, sizeof(command), "wkhtmltopdf '%s' '%s' 2>/dev/null", html_file, pdf_file);
-        show_progress_bar("Converting HTML to PDF (wkhtmltopdf)", 1, 1);
-    } else {
-        snprintf(command, sizeof(command), "which weasyprint > /dev/null 2>&1");
-        if (system(command) == 0) {
-            snprintf(command, sizeof(command), "weasyprint '%s' '%s' 2>/dev/null", html_file, pdf_file);
-            show_progress_bar("Converting HTML to PDF (weasyprint)", 1, 1);
-        } else {
-            // No PDF converter available - keep HTML file as fallback
-            return 0;
+    if (system("which wkhtmltopdf > /dev/null 2>&1") == 0) {
+        int cmd_result = snprintf(command, sizeof(command), "wkhtmltopdf '%s' '%s' 2>/dev/null", html_file, pdf_file);
+        if (cmd_result >= (int)sizeof(command)) {
+            return 0; // Command too long
         }
+        show_progress_bar("Converting HTML to PDF (wkhtmltopdf)", 1, 1);
+    } else if (system("which weasyprint > /dev/null 2>&1") == 0) {
+        int cmd_result = snprintf(command, sizeof(command), "weasyprint '%s' '%s' 2>/dev/null", html_file, pdf_file);
+        if (cmd_result >= (int)sizeof(command)) {
+            return 0; // Command too long
+        }
+        show_progress_bar("Converting HTML to PDF (weasyprint)", 1, 1);
+    } else {
+        // No PDF converter available - keep HTML file as fallback
+        return 0;
     }
     
     ext_result = system(command);
@@ -664,16 +683,21 @@ int export_to_pdf(const export_options_t *options, const config_t *config,
 // Export entries to Markdown format
 int export_to_markdown(const export_options_t *options, const config_t *config, 
                       char **entry_files, int file_count) {
+    (void)config;  // Suppress unused parameter warning
     char output_file[MAX_PATH_SIZE];
     FILE *output;
     FILE *input;
     char line[MAX_LINE_SIZE];
     
     // Create output filename
-    snprintf(output_file, MAX_PATH_SIZE, "%s/ciary_export_%d-%02d-%02d_to_%d-%02d-%02d.md",
+    int result = snprintf(output_file, MAX_PATH_SIZE, "%s/ciary_export_%d-%02d-%02d_to_%d-%02d-%02d.md",
              options->output_path,
              options->start_date.year, options->start_date.month, options->start_date.day,
              options->end_date.year, options->end_date.month, options->end_date.day);
+    
+    if (result >= MAX_PATH_SIZE) {
+        return 0; // Path too long
+    }
     
     output = fopen(output_file, "w");
     if (!output) {
