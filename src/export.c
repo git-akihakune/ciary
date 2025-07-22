@@ -7,6 +7,36 @@
 #include <math.h>
 #endif
 
+// Parse date from filename (YYYY-MM-DD.md format)
+bool parse_date_from_filename(const char* filename, date_t* date) {
+    if (!filename || !date) return false;
+    
+    // Check if filename ends with .md
+    size_t len = strlen(filename);
+    if (len < 13 || strcmp(filename + len - 3, ".md") != 0) {
+        return false;
+    }
+    
+    // Parse YYYY-MM-DD format
+    int year, month, day;
+    if (sscanf(filename, "%d-%d-%d.md", &year, &month, &day) != 3) {
+        return false;
+    }
+    
+    // Validate date values
+    if (year < 1900 || year > 3000 || 
+        month < 1 || month > 12 ||
+        day < 1 || day > 31) {
+        return false;
+    }
+    
+    date->year = year;
+    date->month = month;
+    date->day = day;
+    
+    return true;
+}
+
 // Calculate date range based on preset
 void calculate_date_range(date_range_preset_t preset, date_t current_date, date_t *start, date_t *end) {
     *start = current_date;

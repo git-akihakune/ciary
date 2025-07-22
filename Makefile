@@ -78,7 +78,7 @@ endif
 
 .PHONY: all clean install uninstall debug release dist-all dist-clean deps-status
 .PHONY: linux-x86_64 darwin-universal freebsd-x86_64 openbsd-x86_64 netbsd-x86_64
-.PHONY: test test-utils test-config test-file-io test-integration test-ui test-personalization test-clean test-all
+.PHONY: test test-utils test-config test-file-io test-export test-integration test-ui test-personalization test-clean test-all
 
 # Default target
 all: $(TARGET)
@@ -126,6 +126,10 @@ test-config: $(TEST_TARGET)
 test-file-io: $(TEST_TARGET)
 	@echo "Running file I/O tests..."
 	@$(TEST_TARGET) file_io
+
+test-export: $(TEST_TARGET)
+	@echo "Running export functionality tests..."
+	@$(TEST_TARGET) export
 
 test-integration: $(TEST_TARGET)
 	@echo "Running integration tests..."
@@ -238,6 +242,7 @@ help:
 	@echo "  test-utils    - Run utility function tests"
 	@echo "  test-config   - Run configuration tests"
 	@echo "  test-file-io  - Run file I/O tests"
+	@echo "  test-export   - Run export functionality tests"
 	@echo "  test-integration - Run integration tests"
 	@echo "  test-ui       - Run UI/UX tests"
 	@echo "  test-personalization - Run personalization tests"

@@ -33,6 +33,9 @@ jobs:
           mkdir -p build/dist
           cp ciary build/dist/ciary-linux-x86_64
 
+      - name: Run tests
+        run: make test
+
       - name: Create archive
         run: |
           mkdir -p release
@@ -85,6 +88,9 @@ jobs:
           mkdir -p build/dist
           lipo -create build-x86_64 build-arm64 -output build/dist/ciary-darwin-universal
 
+      - name: Run tests
+        run: make test
+
       - name: Create archive
         run: |
           mkdir -p release
@@ -135,6 +141,7 @@ jobs:
             gmake release
             mkdir -p build/dist
             cp ciary build/dist/ciary-freebsd-x86_64
+            gmake test
 
       - name: Create archive
         run: |

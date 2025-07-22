@@ -129,5 +129,6 @@ int export_to_pdf_native(const export_options_t *options, const config_t *config
 #endif
 void show_progress_bar(const char *message, int current, int total);
 void calculate_date_range(date_range_preset_t preset, date_t current_date, date_t *start, date_t *end);
+bool parse_date_from_filename(const char* filename, date_t* date);
 
 #endif
