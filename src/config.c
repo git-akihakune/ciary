@@ -1,14 +1,49 @@
 #include "ciary.h"
 
 int ensure_config_dir(void) {
-    return ensure_ciary_dir(); // Reuse existing directory creation
+    char *home = getenv("HOME");
+    if (!home) return -1;
+    
+    char config_dir[MAX_PATH_SIZE];
+    snprintf(config_dir, sizeof(config_dir), "%s/%s", home, CIARY_CONFIG_DIR);
+    
+    // Create directories recursively
+    char *p = config_dir + strlen(home) + 1; // Skip home directory
+    while ((p = strchr(p, '/')) != NULL) {
+        *p = '\0';
+        mkdir(config_dir, 0755);
+        *p = '/';
+        p++;
+    }
+    mkdir(config_dir, 0755);
+    
+    return 0;
 }
 
 char* get_config_path(char *path) {
     char *home = getenv("HOME");
     if (!home) return NULL;
     
-    snprintf(path, MAX_PATH_SIZE, "%s/%s/%s", home, CIARY_DIR, CONFIG_FILE);
+    snprintf(path, MAX_PATH_SIZE, "%s/%s/%s", home, CIARY_CONFIG_DIR, CONFIG_FILE);
+    return path;
+}
+
+char* get_default_journal_dir(char *path) {
+    char *home = getenv("HOME");
+    if (!home) return NULL;
+    
+    // First try: $HOME/Documents/journal
+    char documents_dir[MAX_PATH_SIZE];
+    snprintf(documents_dir, sizeof(documents_dir), "%s/Documents", home);
+    
+    struct stat st;
+    if (stat(documents_dir, &st) == 0 && S_ISDIR(st.st_mode)) {
+        snprintf(path, MAX_PATH_SIZE, "%s/Documents/journal", home);
+    } else {
+        // Fallback: $HOME/.local/share/ciary
+        snprintf(path, MAX_PATH_SIZE, "%s/%s", home, CIARY_DATA_DIR);
+    }
+    
     return path;
 }
 
@@ -20,6 +55,11 @@ void load_default_config(config_t *config) {
     
     strncpy(config->preferred_name, user, MAX_NAME_SIZE - 1);
     config->preferred_name[MAX_NAME_SIZE - 1] = '\0';
+    
+    // Default journal directory
+    if (!get_default_journal_dir(config->journal_directory)) {
+        strcpy(config->journal_directory, "./journal"); // Ultimate fallback
+    }
     
     // Default preferences
     strcpy(config->editor_preference, "auto"); // Auto-detect best editor
@@ -67,6 +107,10 @@ int load_config(config_t *config) {
             strncpy(config->preferred_name, value, MAX_NAME_SIZE - 1);
             config->preferred_name[MAX_NAME_SIZE - 1] = '\0';
         }
+        else if (strcmp(key, "journal_directory") == 0) {
+            strncpy(config->journal_directory, value, MAX_PATH_SIZE - 1);
+            config->journal_directory[MAX_PATH_SIZE - 1] = '\0';
+        }
         else if (strcmp(key, "editor_preference") == 0) {
             strncpy(config->editor_preference, value, MAX_NAME_SIZE - 1);
             config->editor_preference[MAX_NAME_SIZE - 1] = '\0';
@@ -102,6 +146,9 @@ int save_config(const config_t *config) {
     
     fprintf(file, "# Your preferred name (how Ciary addresses you)\n");
     fprintf(file, "preferred_name=%s\n\n", config->preferred_name);
+    
+    fprintf(file, "# Directory where journal entries are stored\n");
+    fprintf(file, "journal_directory=%s\n\n", config->journal_directory);
     
     fprintf(file, "# Preferred text editor (auto, nvim, vim, nano, emacs, vi)\n");
     fprintf(file, "editor_preference=%s\n\n", config->editor_preference);
@@ -142,13 +189,38 @@ int setup_first_run(config_t *config) {
     printf("What would you like me to call you? (default: %s): ", config->preferred_name);
     fflush(stdout);
     
-    char input[MAX_NAME_SIZE];
+    char input[MAX_PATH_SIZE];
     if (fgets(input, sizeof(input), stdin)) {
         // Remove newline and use input if not empty
         input[strcspn(input, "\n")] = '\0';
         if (strlen(input) > 0) {
             strncpy(config->preferred_name, input, MAX_NAME_SIZE - 1);
             config->preferred_name[MAX_NAME_SIZE - 1] = '\0';
+        }
+    }
+    
+    // Ask for journal directory
+    printf("\nWhere would you like to store your journal entries?\n");
+    printf("(default: %s): ", config->journal_directory);
+    fflush(stdout);
+    
+    if (fgets(input, sizeof(input), stdin)) {
+        input[strcspn(input, "\n")] = '\0';
+        if (strlen(input) > 0) {
+            // Handle tilde expansion
+            if (input[0] == '~' && input[1] == '/') {
+                char *home = getenv("HOME");
+                if (home) {
+                    char expanded_path[MAX_PATH_SIZE];
+                    snprintf(expanded_path, sizeof(expanded_path), "%s%s", home, input + 1);
+                    strncpy(config->journal_directory, expanded_path, MAX_PATH_SIZE - 1);
+                } else {
+                    strncpy(config->journal_directory, input, MAX_PATH_SIZE - 1);
+                }
+            } else {
+                strncpy(config->journal_directory, input, MAX_PATH_SIZE - 1);
+            }
+            config->journal_directory[MAX_PATH_SIZE - 1] = '\0';
         }
     }
     

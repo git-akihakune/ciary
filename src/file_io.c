@@ -1,42 +1,55 @@
 #include "ciary.h"
 #include <dirent.h>
+#include <stdlib.h>
 
-int ensure_ciary_dir(void) {
-    char path[MAX_PATH_SIZE];
-    char *home = getenv("HOME");
-    if (!home) return -1;
-    
-    snprintf(path, sizeof(path), "%s/%s", home, CIARY_DIR);
-    
+int ensure_journal_dir(const config_t *config) {
     struct stat st;
-    if (stat(path, &st) == -1) {
-        if (mkdir(path, 0755) == -1) {
+    
+    // Create directories recursively if they don't exist
+    char *path_copy = malloc(strlen(config->journal_directory) + 1);
+    strcpy(path_copy, config->journal_directory);
+    
+    char *p = path_copy;
+    while (*p) {
+        if (*p == '/' && p != path_copy) {
+            *p = '\0';
+            if (stat(path_copy, &st) == -1) {
+                mkdir(path_copy, 0755);
+            }
+            *p = '/';
+        }
+        p++;
+    }
+    
+    // Create the final directory
+    if (stat(config->journal_directory, &st) == -1) {
+        if (mkdir(config->journal_directory, 0755) == -1) {
+            free(path_copy);
             return -1;
         }
     }
+    
+    free(path_copy);
     return 0;
 }
 
-char* get_entry_path(date_t date, char *path) {
-    char *home = getenv("HOME");
-    if (!home) return NULL;
-    
-    snprintf(path, MAX_PATH_SIZE, "%s/%s/%04d-%02d-%02d.md",
-             home, CIARY_DIR, date.year, date.month, date.day);
+char* get_entry_path(date_t date, char *path, const config_t *config) {
+    snprintf(path, MAX_PATH_SIZE, "%s/%04d-%02d-%02d.md",
+             config->journal_directory, date.year, date.month, date.day);
     return path;
 }
 
-int entry_exists(date_t date) {
+int entry_exists(date_t date, const config_t *config) {
     char path[MAX_PATH_SIZE];
-    if (!get_entry_path(date, path)) return 0;
+    if (!get_entry_path(date, path, config)) return 0;
     
     struct stat st;
     return (stat(path, &st) == 0);
 }
 
-int count_entries(date_t date) {
+int count_entries(date_t date, const config_t *config) {
     char path[MAX_PATH_SIZE];
-    if (!get_entry_path(date, path)) return 0;
+    if (!get_entry_path(date, path, config)) return 0;
     
     FILE *file = fopen(path, "r");
     if (!file) return 0;
@@ -56,10 +69,10 @@ int count_entries(date_t date) {
 }
 
 int open_entry_in_editor(date_t date, const config_t *config) {
-    if (ensure_ciary_dir() == -1) return -1;
+    if (ensure_journal_dir(config) == -1) return -1;
     
     char path[MAX_PATH_SIZE];
-    if (!get_entry_path(date, path)) return -1;
+    if (!get_entry_path(date, path, config)) return -1;
     
     // Add new entry with current time if file doesn't exist or is being edited
     time_t now = time(NULL);
@@ -135,10 +148,10 @@ int open_entry_in_editor(date_t date, const config_t *config) {
 
 int view_entry(date_t date, const config_t *config) {
     char path[MAX_PATH_SIZE];
-    if (!get_entry_path(date, path)) return -1;
+    if (!get_entry_path(date, path, config)) return -1;
     
     // Check if file exists
-    if (!entry_exists(date)) {
+    if (!entry_exists(date, config)) {
         // Show message that no entries exist for this date
         endwin();
         printf("No entries found for %04d-%02d-%02d\n", date.year, date.month, date.day);

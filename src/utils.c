@@ -103,7 +103,7 @@ void draw_status_bar(app_state_t *state) {
     // Draw status information
     char status[256];
     if (state->mode == MODE_CALENDAR) {
-        int entry_count = count_entries(state->selected_date);
+        int entry_count = count_entries(state->selected_date, &state->config);
         if (entry_count == 0) {
             snprintf(status, sizeof(status), "Calendar | Selected: %04d-%02d-%02d | No entry",
                     state->selected_date.year, state->selected_date.month, state->selected_date.day);

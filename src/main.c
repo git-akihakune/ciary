@@ -6,9 +6,6 @@ void init_app(app_state_t *state) {
     state->current_date = get_current_date();
     state->selected_date = state->current_date;
     
-    // Ensure ciary directory exists
-    ensure_ciary_dir();
-    
     // Load configuration (handles first-run setup) - before ncurses
     setup_first_run(&state->config);
     

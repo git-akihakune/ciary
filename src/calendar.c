@@ -52,7 +52,7 @@ void draw_calendar(app_state_t *state) {
                                   state->current_date.year == state->selected_date.year);
                 
                 date_t check_date = {state->current_date.year, state->current_date.month, day};
-                int entry_count = count_entries(check_date);
+                int entry_count = count_entries(check_date, &state->config);
                 
                 if (is_selected) {
                     attron(A_REVERSE);

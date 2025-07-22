@@ -14,7 +14,8 @@
 #define MAX_PATH_SIZE 512
 #define MAX_LINE_SIZE 256
 #define MAX_NAME_SIZE 64
-#define CIARY_DIR ".ciary"
+#define CIARY_CONFIG_DIR ".config/ciary"
+#define CIARY_DATA_DIR ".local/share/ciary"
 #define CONFIG_FILE "config.conf"
 
 // Removed view modes - only month view now
@@ -34,6 +35,7 @@ typedef struct {
     char preferred_name[MAX_NAME_SIZE];
     char editor_preference[MAX_NAME_SIZE];
     char viewer_preference[MAX_NAME_SIZE];
+    char journal_directory[MAX_PATH_SIZE];
     int show_ascii_art;
     int enable_personalization;
 } config_t;
@@ -58,10 +60,10 @@ int days_in_month(int month, int year);
 int day_of_week(int year, int month, int day);
 
 // File I/O functions
-int ensure_ciary_dir(void);
-char* get_entry_path(date_t date, char *path);
-int entry_exists(date_t date);
-int count_entries(date_t date);
+int ensure_journal_dir(const config_t *config);
+char* get_entry_path(date_t date, char *path, const config_t *config);
+int entry_exists(date_t date, const config_t *config);
+int count_entries(date_t date, const config_t *config);
 int open_entry_in_editor(date_t date, const config_t *config);
 int view_entry(date_t date, const config_t *config);
 
