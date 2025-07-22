@@ -10,15 +10,8 @@ void init_app(app_state_t *state) {
     
     // Initialize application state
     state->mode = MODE_CALENDAR;
-    state->view = VIEW_MONTH;
     state->current_date = get_current_date();
     state->selected_date = state->current_date;
-    state->cursor_row = 0;
-    state->cursor_col = 0;
-    state->scroll_offset = 0;
-    
-    // Initialize current entry
-    memset(&state->current_entry, 0, sizeof(entry_t));
     
     // Ensure ciary directory exists
     ensure_ciary_dir();
@@ -35,9 +28,6 @@ void run_app(app_state_t *state) {
         switch (state->mode) {
             case MODE_CALENDAR:
                 draw_calendar(state);
-                break;
-            case MODE_EDITOR:
-                draw_editor(state);
                 break;
             case MODE_HELP:
                 draw_help();
@@ -60,9 +50,6 @@ void run_app(app_state_t *state) {
         switch (state->mode) {
             case MODE_CALENDAR:
                 handle_calendar_input(state, ch);
-                break;
-            case MODE_EDITOR:
-                handle_editor_input(state, ch);
                 break;
             default:
                 break;

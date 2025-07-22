@@ -70,29 +70,22 @@ void draw_help(void) {
     clear();
     
     mvprintw(2, 2, "CIARY - TUI Diary Help");
-    mvprintw(4, 2, "Calendar Mode:");
+    mvprintw(4, 2, "Calendar Navigation:");
     mvprintw(5, 4, "Arrow keys    - Navigate dates");
-    mvprintw(6, 4, "Enter         - Edit entry for selected date");
-    mvprintw(7, 4, "n             - Create new entry for today");
-    mvprintw(8, 4, "v             - Change view mode (month/week/year)");
-    mvprintw(9, 4, "h             - Show this help");
-    mvprintw(10, 4, "q             - Quit application");
+    mvprintw(6, 4, "Enter or n    - Create new entry (opens external editor)");
+    mvprintw(7, 4, "h             - Show this help");
+    mvprintw(8, 4, "q             - Quit application");
     
-    mvprintw(12, 2, "Editor Mode:");
-    mvprintw(13, 4, "Arrow keys    - Move cursor");
-    mvprintw(14, 4, "Typing        - Insert text");
-    mvprintw(15, 4, "Backspace     - Delete character");
-    mvprintw(16, 4, "Enter         - New line");
-    mvprintw(17, 4, "Ctrl+S        - Save entry");
-    mvprintw(18, 4, "Ctrl+X        - Save and return to calendar");
-    mvprintw(19, 4, "Ctrl+C        - Cancel and return to calendar");
+    mvprintw(10, 2, "Entry Format:");
+    mvprintw(11, 4, "- One file per day: ~/.ciary/YYYY-MM-DD.md");
+    mvprintw(12, 4, "- Multiple entries per day with time headers");
+    mvprintw(13, 4, "- Format: ## HH:MM:SS followed by entry content");
+    mvprintw(14, 4, "- Dates with entries are shown in bold");
     
-    mvprintw(21, 2, "Notes:");
-    mvprintw(22, 4, "- Entries are stored as Markdown files in ~/.ciary/");
-    mvprintw(23, 4, "- Dates with entries are shown in bold");
-    mvprintw(24, 4, "- Automatic timestamps are added to entries");
+    mvprintw(16, 2, "Supported Editors:");
+    mvprintw(17, 4, "- nvim, vim, nano, emacs, vi (first available is used)");
     
-    mvprintw(26, 2, "Press any key to return...");
+    mvprintw(19, 2, "Press any key to return...");
     refresh();
     getch();
 }
@@ -117,12 +110,6 @@ void draw_status_bar(app_state_t *state) {
                     state->selected_date.year, state->selected_date.month, state->selected_date.day,
                     entry_count, (entry_count == 1) ? "entry" : "entries");
         }
-    } else if (state->mode == MODE_EDITOR) {
-        snprintf(status, sizeof(status), "Editor | Row: %d Col: %d | Editing: %04d-%02d-%02d",
-                state->cursor_row + 1, state->cursor_col + 1,
-                state->current_entry.date.year,
-                state->current_entry.date.month,
-                state->current_entry.date.day);
     }
     
     mvprintw(rows - 1, 0, "%s", status);

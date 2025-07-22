@@ -23,15 +23,9 @@ void draw_calendar(app_state_t *state) {
              state->current_date.year);
     mvprintw(title_row, (cols - strlen(title)) / 2, "%s", title);
     
-    // Draw view mode indicator
-    const char *view_str = (state->view == VIEW_MONTH) ? "Month View" :
-                          (state->view == VIEW_WEEK) ? "Week View" : "Year View";
-    mvprintw(title_row + 1, (cols - strlen(view_str)) / 2, "%s", view_str);
-    
-    if (state->view == VIEW_MONTH) {
-        // Draw month calendar
-        int start_row = 5;
-        int start_col = (cols - 21) / 2; // 21 chars wide (3*7)
+    // Draw month calendar
+    int start_row = 4;
+    int start_col = (cols - 21) / 2; // 21 chars wide (3*7)
         
         // Draw day headers
         for (int i = 0; i < 7; i++) {
@@ -80,11 +74,9 @@ void draw_calendar(app_state_t *state) {
             }
             if (day > days) break;
         }
-    }
     
     // Draw instructions
-    mvprintw(rows - 4, 2, "Arrow keys: Navigate  Enter: Edit entry  v: Change view");
-    mvprintw(rows - 3, 2, "n: New entry  d: Delete entry  h: Help  q: Quit");
+    mvprintw(rows - 3, 2, "Arrow keys: Navigate  Enter/n: New entry  h: Help  q: Quit");
     
     draw_status_bar(state);
     refresh();
@@ -146,33 +138,9 @@ void handle_calendar_input(app_state_t *state, int ch) {
         case '\n':
         case '\r':
         case KEY_ENTER:
-            // Load latest entry and switch to editor
-            if (load_latest_entry(state->selected_date, &state->current_entry) == 0) {
-                state->mode = MODE_EDITOR;
-                state->cursor_row = 0;
-                state->cursor_col = 0;
-                state->scroll_offset = 0;
-            }
-            break;
-            
-        case 'v':
-            // Cycle through view modes
-            state->view = (state->view + 1) % 3;
-            break;
-            
         case 'n':
-            // Create new entry for today
-            state->selected_date = get_current_date();
-            state->current_date = state->selected_date;
-            // Create a completely new entry with current timestamp
-            memset(&state->current_entry, 0, sizeof(entry_t));
-            state->current_entry.date = state->selected_date;
-            state->current_entry.created_time = time(NULL);
-            state->current_entry.modified_time = state->current_entry.created_time;
-            state->mode = MODE_EDITOR;
-            state->cursor_row = 0;
-            state->cursor_col = 0;
-            state->scroll_offset = 0;
+            // Open entry in external editor
+            open_entry_in_editor(state->selected_date);
             break;
     }
 }
