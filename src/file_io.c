@@ -112,3 +112,59 @@ int open_entry_in_editor(date_t date) {
     
     return -1; // No suitable editor found
 }
+
+int view_entry(date_t date) {
+    char path[MAX_PATH_SIZE];
+    if (!get_entry_path(date, path)) return -1;
+    
+    // Check if file exists
+    if (!entry_exists(date)) {
+        // Show message that no entries exist for this date
+        endwin();
+        printf("No entries found for %04d-%02d-%02d\n", date.year, date.month, date.day);
+        printf("Press Enter to continue...");
+        getchar();
+        
+        // Reinitialize ncurses
+        initscr();
+        cbreak();
+        noecho();
+        keypad(stdscr, TRUE);
+        curs_set(1);
+        return 0;
+    }
+    
+    // Try different pagers in order of preference
+    char command[MAX_PATH_SIZE + 50];
+    const char *pagers[] = {"less", "more", "cat", NULL};
+    
+    for (int i = 0; pagers[i] != NULL; i++) {
+        // Check if pager exists
+        snprintf(command, sizeof(command), "which %s >/dev/null 2>&1", pagers[i]);
+        if (system(command) == 0) {
+            // Pager found, use it
+            if (strcmp(pagers[i], "cat") == 0) {
+                // For cat, add a pause after display
+                snprintf(command, sizeof(command), "%s \"%s\" && echo \"\\nPress Enter to continue...\" && read", pagers[i], path);
+            } else {
+                // For less/more, they handle their own paging
+                snprintf(command, sizeof(command), "%s \"%s\"", pagers[i], path);
+            }
+            
+            // Temporarily restore terminal settings
+            endwin();
+            int result = system(command);
+            
+            // Reinitialize ncurses
+            initscr();
+            cbreak();
+            noecho();
+            keypad(stdscr, TRUE);
+            curs_set(1);
+            
+            return (result == 0) ? 0 : -1;
+        }
+    }
+    
+    return -1; // No suitable pager found
+}

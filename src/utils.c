@@ -73,19 +73,21 @@ void draw_help(void) {
     mvprintw(4, 2, "Calendar Navigation:");
     mvprintw(5, 4, "Arrow keys    - Navigate dates");
     mvprintw(6, 4, "Enter or n    - Create new entry (opens external editor)");
-    mvprintw(7, 4, "h             - Show this help");
-    mvprintw(8, 4, "q             - Quit application");
+    mvprintw(7, 4, "v             - View existing entries (read-only)");
+    mvprintw(8, 4, "h             - Show this help");
+    mvprintw(9, 4, "q             - Quit application");
     
-    mvprintw(10, 2, "Entry Format:");
-    mvprintw(11, 4, "- One file per day: ~/.ciary/YYYY-MM-DD.md");
-    mvprintw(12, 4, "- Multiple entries per day with time headers");
-    mvprintw(13, 4, "- Format: ## HH:MM:SS followed by entry content");
-    mvprintw(14, 4, "- Dates with entries are shown in bold");
+    mvprintw(11, 2, "Entry Format:");
+    mvprintw(12, 4, "- One file per day: ~/.ciary/YYYY-MM-DD.md");
+    mvprintw(13, 4, "- Multiple entries per day with time headers");
+    mvprintw(14, 4, "- Format: ## HH:MM:SS followed by entry content");
+    mvprintw(15, 4, "- Dates with entries are shown in bold");
     
-    mvprintw(16, 2, "Supported Editors:");
-    mvprintw(17, 4, "- nvim, vim, nano, emacs, vi (first available is used)");
+    mvprintw(17, 2, "External Tools:");
+    mvprintw(18, 4, "- Editors: nvim, vim, nano, emacs, vi (first available)");
+    mvprintw(19, 4, "- Viewers: less, more, cat (first available)");
     
-    mvprintw(19, 2, "Press any key to return...");
+    mvprintw(21, 2, "Press any key to return...");
     refresh();
     getch();
 }

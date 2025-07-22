@@ -52,6 +52,7 @@ char* get_entry_path(date_t date, char *path);
 int entry_exists(date_t date);
 int count_entries(date_t date);
 int open_entry_in_editor(date_t date);
+int view_entry(date_t date);
 
 // Utility functions
 date_t get_current_date(void);

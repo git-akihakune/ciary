@@ -76,7 +76,7 @@ void draw_calendar(app_state_t *state) {
         }
     
     // Draw instructions
-    mvprintw(rows - 3, 2, "Arrow keys: Navigate  Enter/n: New entry  h: Help  q: Quit");
+    mvprintw(rows - 3, 2, "Arrow keys: Navigate  Enter/n: New entry  v: View  h: Help  q: Quit");
     
     draw_status_bar(state);
     refresh();
@@ -141,6 +141,11 @@ void handle_calendar_input(app_state_t *state, int ch) {
         case 'n':
             // Open entry in external editor
             open_entry_in_editor(state->selected_date);
+            break;
+            
+        case 'v':
+            // View entry in read-only mode
+            view_entry(state->selected_date);
             break;
     }
 }
