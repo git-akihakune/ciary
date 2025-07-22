@@ -75,8 +75,12 @@ void draw_calendar(app_state_t *state) {
             if (day > days) break;
         }
     
-    // Draw instructions
-    mvprintw(rows - 3, 2, "Arrows: Navigate  [/]: Month  </>/,/.: Year  Enter/n: New  v: View  h: Help  q: Quit");
+    // Draw instructions - dynamic text based on editor
+    const char* editor = get_actual_editor(&state->config);
+    const char* new_text = (strcmp(editor, "nano") == 0) ? "Enter: New" : "n: New";
+    char instructions[256];
+    snprintf(instructions, sizeof(instructions), "Arrows: Navigate  %s  v: View  h: Help  q: Quit", new_text);
+    mvprintw(rows - 3, 2, "%s", instructions);
     
     draw_status_bar(state);
     refresh();

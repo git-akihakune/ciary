@@ -300,3 +300,26 @@ int view_entry(date_t date, const config_t *config) {
     
     return -1; // No suitable pager found
 }
+
+const char* get_actual_editor(const config_t *config) {
+    char command[MAX_LINE_SIZE];
+    static const char *editors[] = {"nvim", "vim", "nano", "emacs", "vi", NULL};
+    
+    // Check if a specific editor is configured and available
+    if (strcmp(config->editor_preference, "auto") != 0) {
+        snprintf(command, sizeof(command), "which %s >/dev/null 2>&1", config->editor_preference);
+        if (system(command) == 0) {
+            return config->editor_preference;
+        }
+    }
+    
+    // Fall back to auto-detection
+    for (int i = 0; editors[i] != NULL; i++) {
+        snprintf(command, sizeof(command), "which %s >/dev/null 2>&1", editors[i]);
+        if (system(command) == 0) {
+            return editors[i];
+        }
+    }
+    
+    return "vi"; // Default fallback
+}

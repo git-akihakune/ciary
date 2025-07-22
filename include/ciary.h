@@ -69,6 +69,7 @@ int open_entry_with_time(date_t date, int hour, int minute, int second, const co
 int view_entry(date_t date, const config_t *config);
 int prompt_for_time(int *hour, int *minute, int *second);
 int is_today(date_t date);
+const char* get_actual_editor(const config_t *config);
 
 // Utility functions
 date_t get_current_date(void);
