@@ -6,13 +6,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -std=c99 -Iinclude
 LDFLAGS = -lncurses
 
-# libHaru detection via pkg-config
-LIBHARU_AVAILABLE := $(shell pkg-config --exists libharu 2>/dev/null && echo 1 || echo 0)
-
-ifeq ($(LIBHARU_AVAILABLE),1)
-    CFLAGS += $(shell pkg-config --cflags libharu) -DHAVE_LIBHARU
-    LDFLAGS += $(shell pkg-config --libs libharu)
-endif
+# libharu dependency removed - PDF export now uses external tools only
 
 # Build directories
 SRCDIR = src
@@ -284,19 +278,7 @@ deps-status:
 		echo "✗ ncurses: missing"; \
 	fi
 	@echo ""
-	@echo "PDF Export Options:"
-ifeq ($(LIBHARU_AVAILABLE),1)
-	@echo "✓ libHaru: available (native PDF generation enabled)"
-else
-	@echo "⚠ libHaru: not available"
-	@echo "  Install:"
-	@echo "    Ubuntu/Debian: sudo apt install libharu-dev"
-	@echo "    macOS:         brew install libharu"
-	@echo "    FreeBSD:       pkg install libharu"
-	@echo "    Arch Linux:    sudo pacman -S libharu"
-endif
-	@echo ""
-	@echo "External PDF Tools:"
+	@echo "PDF Export Options (external tools only):"
 	@if command -v wkhtmltopdf >/dev/null 2>&1; then \
 		echo "✓ wkhtmltopdf: available"; \
 	else \
