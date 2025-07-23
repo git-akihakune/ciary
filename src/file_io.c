@@ -105,14 +105,17 @@ int open_entry_in_editor(date_t date, const config_t *config) {
     fclose(file);
     
     // Try different editors in order of preference
-    char command[1024];
+    char command[MAX_PATH_SIZE + 256];  // Space for path + editor name + arguments
     const char *editors[] = {"nvim", "vim", "nano", "emacs", "vi", NULL};
     
     // If user has a specific preference, try that first
     if (strcmp(config->editor_preference, "auto") != 0) {
         snprintf(command, sizeof(command), "which %s >/dev/null 2>&1", config->editor_preference);
         if (system(command) == 0) {
-            snprintf(command, sizeof(command), "%s \"%s\"", config->editor_preference, path);
+            int cmd_result = snprintf(command, sizeof(command), "%s \"%s\"", config->editor_preference, path);
+            if (cmd_result >= (int)sizeof(command)) {
+                return 1; // Command too long
+            }
             
             endwin();
             int result = system(command);
@@ -133,7 +136,10 @@ int open_entry_in_editor(date_t date, const config_t *config) {
         snprintf(command, sizeof(command), "which %s >/dev/null 2>&1", editors[i]);
         if (system(command) == 0) {
             // Editor found, use it
-            snprintf(command, sizeof(command), "%s \"%s\"", editors[i], path);
+            int cmd_result = snprintf(command, sizeof(command), "%s \"%s\"", editors[i], path);
+            if (cmd_result >= (int)sizeof(command)) {
+                continue; // Skip this editor if command too long
+            }
             
             // Temporarily restore terminal settings
             endwin();
@@ -180,14 +186,17 @@ int open_entry_with_time(date_t date, int hour, int minute, int second, const co
     fclose(file);
     
     // Try different editors in order of preference
-    char command[1024];
+    char command[MAX_PATH_SIZE + 256];  // Space for path + editor name + arguments
     const char *editors[] = {"nvim", "vim", "nano", "emacs", "vi", NULL};
     
     // If user has a specific preference, try that first
     if (strcmp(config->editor_preference, "auto") != 0) {
         snprintf(command, sizeof(command), "which %s >/dev/null 2>&1", config->editor_preference);
         if (system(command) == 0) {
-            snprintf(command, sizeof(command), "%s \"%s\"", config->editor_preference, path);
+            int cmd_result = snprintf(command, sizeof(command), "%s \"%s\"", config->editor_preference, path);
+            if (cmd_result >= (int)sizeof(command)) {
+                return 1; // Command too long
+            }
             
             endwin();
             int result = system(command);
@@ -208,7 +217,10 @@ int open_entry_with_time(date_t date, int hour, int minute, int second, const co
         snprintf(command, sizeof(command), "which %s >/dev/null 2>&1", editors[i]);
         if (system(command) == 0) {
             // Editor found, use it
-            snprintf(command, sizeof(command), "%s \"%s\"", editors[i], path);
+            int cmd_result = snprintf(command, sizeof(command), "%s \"%s\"", editors[i], path);
+            if (cmd_result >= (int)sizeof(command)) {
+                continue; // Skip this editor if command too long
+            }
             
             // Temporarily restore terminal settings
             endwin();
@@ -250,17 +262,21 @@ int view_entry(date_t date, const config_t *config) {
     }
     
     // Try different pagers in order of preference
-    char command[1024];
+    char command[MAX_PATH_SIZE + 256];  // Space for path + pager name + arguments
     const char *pagers[] = {"less", "more", "cat", NULL};
     
     // If user has a specific preference, try that first
     if (strcmp(config->viewer_preference, "auto") != 0) {
         snprintf(command, sizeof(command), "which %s >/dev/null 2>&1", config->viewer_preference);
         if (system(command) == 0) {
+            int cmd_result;
             if (strcmp(config->viewer_preference, "cat") == 0) {
-                snprintf(command, sizeof(command), "%s \"%s\" && echo \"\\nPress Enter to continue...\" && read", config->viewer_preference, path);
+                cmd_result = snprintf(command, sizeof(command), "%s \"%s\" && echo \"\\nPress Enter to continue...\" && read", config->viewer_preference, path);
             } else {
-                snprintf(command, sizeof(command), "%s \"%s\"", config->viewer_preference, path);
+                cmd_result = snprintf(command, sizeof(command), "%s \"%s\"", config->viewer_preference, path);
+            }
+            if (cmd_result >= (int)sizeof(command)) {
+                return 1; // Command too long
             }
             
             endwin();
@@ -282,12 +298,16 @@ int view_entry(date_t date, const config_t *config) {
         snprintf(command, sizeof(command), "which %s >/dev/null 2>&1", pagers[i]);
         if (system(command) == 0) {
             // Pager found, use it
+            int cmd_result;
             if (strcmp(pagers[i], "cat") == 0) {
                 // For cat, add a pause after display
-                snprintf(command, sizeof(command), "%s \"%s\" && echo \"\\nPress Enter to continue...\" && read", pagers[i], path);
+                cmd_result = snprintf(command, sizeof(command), "%s \"%s\" && echo \"\\nPress Enter to continue...\" && read", pagers[i], path);
             } else {
                 // For less/more, they handle their own paging
-                snprintf(command, sizeof(command), "%s \"%s\"", pagers[i], path);
+                cmd_result = snprintf(command, sizeof(command), "%s \"%s\"", pagers[i], path);
+            }
+            if (cmd_result >= (int)sizeof(command)) {
+                continue; // Skip this pager if command too long
             }
             
             // Temporarily restore terminal settings

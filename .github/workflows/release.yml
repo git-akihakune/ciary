@@ -24,7 +24,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libncurses-dev gcc-multilib
+          sudo apt-get install -y libncurses-dev gcc-multilib pkg-config libharu-dev
 
 
       - name: Build for Linux x86_64
@@ -32,6 +32,9 @@ jobs:
           make release
           mkdir -p build/dist
           cp ciary build/dist/ciary-linux-x86_64
+
+      - name: Run tests
+        run: make test
 
       - name: Create archive
         run: |
@@ -51,9 +54,10 @@ jobs:
           ==============================
           
           1. Make executable: chmod +x ciary
-          2. Install dependencies: sudo apt install libncurses-dev  
-          3. Move to PATH: sudo mv ciary /usr/local/bin/
-          4. Run: ciary
+          2. Install dependencies: sudo apt install libncurses-dev
+          3. Optional PDF support: sudo apt install libharu-dev wkhtmltopdf  
+          4. Move to PATH: sudo mv ciary /usr/local/bin/
+          5. Run: ciary
           EOF
           
           tar -czf "../../release/${archive_name}.tar.gz" "$archive_name"
@@ -72,7 +76,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew install ncurses
+          brew install ncurses pkg-config libharu
 
       - name: Build universal binary
         run: |
@@ -83,6 +87,9 @@ jobs:
           # Create universal binary
           mkdir -p build/dist
           lipo -create build-x86_64 build-arm64 -output build/dist/ciary-darwin-universal
+
+      - name: Run tests
+        run: make test
 
       - name: Create archive
         run: |
@@ -103,8 +110,9 @@ jobs:
           
           1. Make executable: chmod +x ciary
           2. Install dependencies: brew install ncurses
-          3. Move to PATH: sudo mv ciary /usr/local/bin/
-          4. Run: ciary
+          3. Optional PDF support: brew install libharu wkhtmltopdf
+          4. Move to PATH: sudo mv ciary /usr/local/bin/
+          5. Run: ciary
           EOF
           
           tar -czf "../../release/${archive_name}.tar.gz" "$archive_name"
@@ -128,11 +136,12 @@ jobs:
           usesh: true
           mem: 2048
           prepare: |
-            pkg install -y ncurses gmake gcc
+            pkg install -y ncurses gmake gcc pkgconf libharu
           run: |
             gmake release
             mkdir -p build/dist
             cp ciary build/dist/ciary-freebsd-x86_64
+            gmake test
 
       - name: Create archive
         run: |
@@ -153,8 +162,9 @@ jobs:
           
           1. Make executable: chmod +x ciary
           2. Install dependencies: pkg install ncurses
-          3. Move to PATH: sudo mv ciary /usr/local/bin/
-          4. Run: ciary
+          3. Optional PDF support: pkg install libharu wkhtmltopdf
+          4. Move to PATH: sudo mv ciary /usr/local/bin/
+          5. Run: ciary
           EOF
           
           tar -czf "../../release/${archive_name}.tar.gz" "$archive_name"

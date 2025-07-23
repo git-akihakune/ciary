@@ -228,5 +228,15 @@ void handle_calendar_input(app_state_t *state, int ch) {
             // View entry in read-only mode
             view_entry(state->selected_date, &state->config);
             break;
+            
+        case 'e':
+            // Export entries
+            {
+                export_options_t options;
+                if (show_export_dialog(state, &options)) {
+                    export_entries(&options, &state->config);
+                }
+            }
+            break;
     }
 }

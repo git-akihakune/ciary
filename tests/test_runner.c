@@ -7,6 +7,7 @@
 void run_utils_tests(void);
 void run_config_tests(void);
 void run_file_io_tests(void);
+void run_export_tests(void);
 void run_integration_tests(void);
 void run_ui_tests(void);
 void run_personalization_tests(void);
@@ -50,6 +51,7 @@ void print_usage(const char* program_name) {
     printf("  utils          Run utility function tests\n");
     printf("  config         Run configuration system tests\n");
     printf("  file_io        Run file I/O operation tests\n");
+    printf("  export         Run export functionality tests\n");
     printf("  integration    Run integration tests\n");
     printf("  ui             Run UI/UX tests\n");
     printf("  personalization Run personalization system tests\n");
@@ -113,6 +115,9 @@ int main(int argc, char* argv[]) {
         run_file_io_tests();
         update_global_stats();
         
+        run_export_tests();
+        update_global_stats();
+        
         run_integration_tests();
         update_global_stats();
         
@@ -132,6 +137,10 @@ int main(int argc, char* argv[]) {
     }
     else if (strcmp(test_suite, "file_io") == 0) {
         run_file_io_tests();
+        update_global_stats();
+    }
+    else if (strcmp(test_suite, "export") == 0) {
+        run_export_tests();
         update_global_stats();
     }
     else if (strcmp(test_suite, "integration") == 0) {

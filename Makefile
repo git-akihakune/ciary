@@ -6,6 +6,14 @@ CC = gcc
 CFLAGS = -Wall -Wextra -std=c99 -Iinclude
 LDFLAGS = -lncurses
 
+# libHaru detection via pkg-config
+LIBHARU_AVAILABLE := $(shell pkg-config --exists libharu 2>/dev/null && echo 1 || echo 0)
+
+ifeq ($(LIBHARU_AVAILABLE),1)
+    CFLAGS += $(shell pkg-config --cflags libharu) -DHAVE_LIBHARU
+    LDFLAGS += $(shell pkg-config --libs libharu)
+endif
+
 # Build directories
 SRCDIR = src
 INCDIR = include
@@ -68,9 +76,9 @@ else
     ARCH = $(UNAME_M)
 endif
 
-.PHONY: all clean install uninstall debug release dist-all dist-clean
+.PHONY: all clean install uninstall debug release dist-all dist-clean deps-status
 .PHONY: linux-x86_64 darwin-universal freebsd-x86_64 openbsd-x86_64 netbsd-x86_64
-.PHONY: test test-utils test-config test-file-io test-integration test-ui test-personalization test-clean test-all
+.PHONY: test test-utils test-config test-file-io test-export test-integration test-ui test-personalization test-clean test-all
 
 # Default target
 all: $(TARGET)
@@ -118,6 +126,10 @@ test-config: $(TEST_TARGET)
 test-file-io: $(TEST_TARGET)
 	@echo "Running file I/O tests..."
 	@$(TEST_TARGET) file_io
+
+test-export: $(TEST_TARGET)
+	@echo "Running export functionality tests..."
+	@$(TEST_TARGET) export
 
 test-integration: $(TEST_TARGET)
 	@echo "Running integration tests..."
@@ -230,6 +242,7 @@ help:
 	@echo "  test-utils    - Run utility function tests"
 	@echo "  test-config   - Run configuration tests"
 	@echo "  test-file-io  - Run file I/O tests"
+	@echo "  test-export   - Run export functionality tests"
 	@echo "  test-integration - Run integration tests"
 	@echo "  test-ui       - Run UI/UX tests"
 	@echo "  test-personalization - Run personalization tests"
@@ -247,6 +260,9 @@ help:
 	@echo "Distribution:"
 	@echo "  dist-all      - Build all distribution targets"
 	@echo ""
+	@echo "Dependencies:"
+	@echo "  deps-status   - Show dependency status and installation hints"
+	@echo ""
 	@echo "Maintenance:"
 	@echo "  clean         - Remove build artifacts"
 	@echo "  dist-clean    - Remove build and dist artifacts"
@@ -255,3 +271,46 @@ help:
 	@echo "  help          - Show this help"
 	@echo ""
 	@echo "Current platform: $(PLATFORM)-$(ARCH)"
+
+# Dependency status and installation hints
+deps-status:
+	@echo "Ciary Dependency Status"
+	@echo "======================="
+	@echo ""
+	@echo "Required:"
+	@if pkg-config --exists ncurses 2>/dev/null; then \
+		echo "✓ ncurses: available"; \
+	else \
+		echo "✗ ncurses: missing"; \
+	fi
+	@echo ""
+	@echo "PDF Export Options:"
+ifeq ($(LIBHARU_AVAILABLE),1)
+	@echo "✓ libHaru: available (native PDF generation enabled)"
+else
+	@echo "⚠ libHaru: not available"
+	@echo "  Install:"
+	@echo "    Ubuntu/Debian: sudo apt install libharu-dev"
+	@echo "    macOS:         brew install libharu"
+	@echo "    FreeBSD:       pkg install libharu"
+	@echo "    Arch Linux:    sudo pacman -S libharu"
+endif
+	@echo ""
+	@echo "External PDF Tools:"
+	@if command -v wkhtmltopdf >/dev/null 2>&1; then \
+		echo "✓ wkhtmltopdf: available"; \
+	else \
+		echo "⚠ wkhtmltopdf: not available"; \
+		echo "  Install:"; \
+		echo "    Ubuntu/Debian: sudo apt install wkhtmltopdf"; \
+		echo "    macOS:         brew install wkhtmltopdf"; \
+		echo "    FreeBSD:       pkg install wkhtmltopdf"; \
+	fi
+	@if command -v weasyprint >/dev/null 2>&1; then \
+		echo "✓ weasyprint: available"; \
+	else \
+		echo "⚠ weasyprint: not available"; \
+		echo "  Install:       pip install weasyprint"; \
+	fi
+	@echo ""
+	@echo "Note: HTML and Markdown export are always available"
