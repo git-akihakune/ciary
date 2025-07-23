@@ -292,6 +292,9 @@ int collect_entries_in_range(const export_options_t *options, const config_t *co
     entry_file_t entries[1000];  // Reasonable limit
     int count = 0;
     
+    // Initialize entries array to prevent undefined behavior
+    memset(entries, 0, sizeof(entries));
+    
     dir = opendir(config->journal_directory);
     if (!dir) {
         return 0;

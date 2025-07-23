@@ -13,7 +13,10 @@ extern int test_failed;
 static char* create_test_journal_dir(void) {
     static char temp_dir[256];
     snprintf(temp_dir, sizeof(temp_dir), "/tmp/ciary_test_%d", getpid());
-    mkdir(temp_dir, 0755);
+    if (mkdir(temp_dir, 0755) != 0 && errno != EEXIST) {
+        // If mkdir fails and directory doesn't exist, return NULL
+        return NULL;
+    }
     return temp_dir;
 }
 
@@ -100,6 +103,10 @@ void test_chronological_sorting(void) {
     TEST_CASE("Chronological Sorting");
     
     char* test_dir = create_test_journal_dir();
+    if (!test_dir) {
+        // If directory creation fails, skip this test
+        return;
+    }
     
     // Create test entries in random order
     create_test_entry(test_dir, "2024-07-25", "## 10:00:00\n\nNewest entry");
@@ -193,6 +200,10 @@ void test_markdown_export(void) {
     TEST_CASE("Markdown Export Functionality");
     
     char* test_dir = create_test_journal_dir();
+    if (!test_dir) {
+        // If directory creation fails, skip this test
+        return;
+    }
     
     // Create a simple test entry
     create_test_entry(test_dir, "2024-07-15", "## 10:30:00\n\nTest entry for markdown export");
