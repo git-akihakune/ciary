@@ -298,9 +298,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Roadmap
 
 - [x] **Cross-platform binary releases** - Automated builds for Linux, macOS, and BSD variants
+- [x] **Export capabilities** (PDF, HTML)
 - [ ] Weekly and yearly calendar views
 - [ ] Entry search functionality
-- [ ] Export capabilities (PDF, HTML)
 - [ ] Entry templates
 - [ ] Mood tracking integration
 - [ ] Plugin system for extensions
