@@ -21,7 +21,6 @@ make deps-status
 - **gcc**: C compiler
 
 ### Optional (PDF Export)
-- **libharu**: Native PDF generation (recommended)
 - **wkhtmltopdf**: HTML-to-PDF converter
 - **weasyprint**: Alternative PDF converter
 
@@ -33,7 +32,7 @@ make deps-status
 sudo apt install libncurses-dev build-essential
 
 # Optional PDF support
-sudo apt install libharu-dev wkhtmltopdf
+sudo apt install wkhtmltopdf
 
 # Build
 make
@@ -45,7 +44,7 @@ make
 brew install ncurses
 
 # Optional PDF support  
-brew install libharu wkhtmltopdf
+brew install wkhtmltopdf
 
 # Build
 make
@@ -57,7 +56,7 @@ make
 pkg install ncurses gmake gcc
 
 # Optional PDF support
-pkg install libharu wkhtmltopdf
+pkg install wkhtmltopdf
 
 # Build
 gmake
@@ -69,7 +68,7 @@ gmake
 sudo pacman -S ncurses base-devel
 
 # Optional PDF support
-sudo pacman -S libharu
+sudo pacman -S wkhtmltopdf
 # wkhtmltopdf from AUR: yay -S wkhtmltopdf
 
 # Build
@@ -92,10 +91,9 @@ make help         # Show all available targets
 
 Ciary automatically detects and uses the best available PDF method:
 
-1. **libharu** (best): Native generation, fast, no external tools
-2. **wkhtmltopdf**: High quality, requires external tool
-3. **weasyprint**: Good quality, requires Python
-4. **HTML fallback**: Always available
+1. **wkhtmltopdf**: High quality, requires external tool
+2. **weasyprint**: Good quality, requires Python
+3. **HTML fallback**: Always available
 
 Check what's available: `make deps-status`
 
@@ -153,12 +151,7 @@ pkg install ncurses
 # Check status
 make deps-status
 
-# Install libharu (recommended)
-sudo apt install libharu-dev     # Ubuntu
-brew install libharu             # macOS
-pkg install libharu              # FreeBSD
-
-# Or install external tools
+# Install external PDF tools
 sudo apt install wkhtmltopdf     # Ubuntu
 pip install weasyprint           # Any platform
 ```
@@ -174,7 +167,7 @@ pkg install gmake gcc pkgconf                # FreeBSD
 ## What Gets Built
 
 - `ciary`: Main executable
-- PDF support: Automatically enabled if libharu is detected
+- PDF support: Automatically enabled if external tools are available
 - Export formats: HTML (always), Markdown (always), PDF (if available)
 
 Run `make deps-status` to see exactly what's available on your system.

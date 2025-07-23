@@ -24,7 +24,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libncurses-dev gcc-multilib pkg-config libharu-dev
+          sudo apt-get install -y libncurses-dev gcc-multilib pkg-config
 
 
       - name: Build for Linux x86_64
@@ -55,7 +55,7 @@ jobs:
           
           1. Make executable: chmod +x ciary
           2. Install dependencies: sudo apt install libncurses-dev
-          3. Optional PDF support: sudo apt install libharu-dev wkhtmltopdf  
+          3. Optional PDF support: sudo apt install wkhtmltopdf  
           4. Move to PATH: sudo mv ciary /usr/local/bin/
           5. Run: ciary
           EOF
@@ -76,7 +76,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew install ncurses pkg-config libharu
+          brew install ncurses pkg-config
 
       - name: Build universal binary
         run: |
@@ -110,7 +110,7 @@ jobs:
           
           1. Make executable: chmod +x ciary
           2. Install dependencies: brew install ncurses
-          3. Optional PDF support: brew install libharu wkhtmltopdf
+          3. Optional PDF support: brew install wkhtmltopdf
           4. Move to PATH: sudo mv ciary /usr/local/bin/
           5. Run: ciary
           EOF
@@ -136,7 +136,7 @@ jobs:
           usesh: true
           mem: 2048
           prepare: |
-            pkg install -y ncurses gmake gcc pkgconf libharu
+            pkg install -y ncurses gmake gcc pkgconf
           run: |
             gmake release
             mkdir -p build/dist
@@ -162,7 +162,7 @@ jobs:
           
           1. Make executable: chmod +x ciary
           2. Install dependencies: pkg install ncurses
-          3. Optional PDF support: pkg install libharu wkhtmltopdf
+          3. Optional PDF support: pkg install wkhtmltopdf
           4. Move to PATH: sudo mv ciary /usr/local/bin/
           5. Run: ciary
           EOF
