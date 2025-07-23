@@ -77,6 +77,12 @@ void calculate_date_range(date_range_preset_t preset, date_t current_date, date_
 
 // Show progress bar
 void show_progress_bar(const char *message, int current, int total) {
+    // Check if ncurses is initialized by testing if stdscr exists
+    // In test environments, stdscr will be NULL and we should skip UI updates
+    if (!stdscr) {
+        return;  // Skip progress bar in test environment
+    }
+    
     int bar_width = 40;
     float progress = (float)current / total;
     int pos = bar_width * progress;
